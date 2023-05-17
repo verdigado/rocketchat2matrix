@@ -23,6 +23,16 @@ docker-compose exec -it synapse register_new_matrix_user http://localhost:8008 -
 
 Then you can access the homeserver in [Element Web](https://app.element.io/#/login) or the [local admin interface](http://localhost:8080) as `http://localhost:8008` with the `verdiadmin` as username AND password.
 
+You can store an access token for that user:
+
+```shell
+curl --request POST \
+  --url http://localhost:8008/_matrix/client/v3/login \
+  --header 'Content-Type: application/json' \
+  --data '{"type": "m.login.password","user": "verdiadmin","password": "verdiadmin","device_id": "DEV"}' \
+> access_token.json
+```
+
 ## Design Decisions
 
 - Getting data from Rocket.Chat via (currently) manual mongodb export
