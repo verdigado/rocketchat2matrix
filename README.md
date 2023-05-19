@@ -30,7 +30,7 @@ curl --request POST \
   --url http://localhost:8008/_matrix/client/v3/login \
   --header 'Content-Type: application/json' \
   --data '{"type": "m.login.password","user": "verdiadmin","password": "verdiadmin","device_id": "DEV"}' \
-> access_token.json
+> src/config/synapse_access_token.json
 ```
 
 ## Design Decisions

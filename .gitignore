@@ -131,5 +131,5 @@ dist
 
 # for this project
 files/
-access_token.json
+src/config/synapse_access_token.json
 inputs/
