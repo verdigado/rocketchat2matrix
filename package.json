@@ -1,0 +1,18 @@
+{
+  "devDependencies": {
+    "typescript": "^5.0.4"
+  },
+  "name": "rocketchat2matrix",
+  "version": "0.1.0",
+  "description": "Rocket.Chat to Matrix migration script",
+  "main": "functions.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://git.verdigado.com/NB-Public/rocketchat2matrix"
+  },
+  "author": "HerHde",
+  "license": "AGPL-3.0-or-later"
+}

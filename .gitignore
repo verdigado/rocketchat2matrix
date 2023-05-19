@@ -131,7 +131,5 @@ dist
 
 # for this project
 files/
-message_example.json
-rocketchat_message.json
-rocketchat_room.json
 access_token.json
+inputs/
