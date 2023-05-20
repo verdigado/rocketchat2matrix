@@ -37,6 +37,7 @@ pipeline:
   node-compile:
     image: *node_image
     commands:
+      - echo '{"user_id":"ci-dummy","access_token":"ci-dummy","home_server":"ci-dummy","device_id":"ci-dummy"}' > src/config/synapse_access_token.json
       - npm run compile
 
   # node-test:
