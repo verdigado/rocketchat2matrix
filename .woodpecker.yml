@@ -1,13 +1,45 @@
+variables:
+  - &node_image 'node:20-alpine'
+
 pipeline:
   lint-markdown:
     image: markdownlint/markdownlint:latest
+    group: test
     commands:
       - mdl .
 
   check-pre-commit:
     image: python:latest
+    group: test
     environment:
       - SKIP=no-commit-to-branch # Ignore "don't commit to protected branch" check
     commands:
       - pip install pre-commit
       - pre-commit run --all-files
+
+  node-install-dependencies:
+    image: *node_image
+    commands:
+      - npm clean-install
+
+  node-lint:
+    image: *node_image
+    group: test
+    commands:
+      - npm run lint
+
+  node-format:
+    image: *node_image
+    group: test
+    commands:
+      - npm run format
+
+  node-compile:
+    image: *node_image
+    commands:
+      - npm run compile
+
+  # node-test:
+  #   image: *node_image
+  #   commands:
+  #     - npm test
