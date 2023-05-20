@@ -12,6 +12,8 @@ mongoexport --collection=rocketchat_room --db=rocketchat --out=rocketchat_room.j
 mongoexport --collection=users --db=rocketchat --out=users.json
 ```
 
+Export them to `inputs/`
+
 ## Running the Matrix Dev Server
 
 ```shell
