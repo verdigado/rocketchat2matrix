@@ -28,7 +28,7 @@ mapRoom (rcRoom) {
     case 'c':
       room.preset = 'public_chat'
       break;
-      
+
       case 'p':
       room.preset = 'private_chat'
       break;

@@ -1,0 +1,13 @@
+pipeline:
+  lint-markdown:
+    image: markdownlint/markdownlint:latest
+    commands:
+      - mdl .
+
+  check-pre-commit:
+    image: python:latest
+    environment:
+      - SKIP=no-commit-to-branch # Ignore "don't commit to protected branch" check
+    commands:
+      - pip install pre-commit
+      - pre-commit run --all-files
