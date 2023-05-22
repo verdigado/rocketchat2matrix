@@ -4,32 +4,45 @@ import log from './logger'
 import { whoami } from './synapse'
 log.info('rocketchat2matrix starts.')
 
-interface RcUser {
-  username: string
-  name: string
-  roles: string[]
-  _id: string
-  __rooms: string[]
+const enum Entities {
+  Users = 'users.json',
+  Rooms = 'rocketchat_room.json',
+  Messages = 'rocketchat_message.json',
 }
 
-function loadRcExport(filename: string) {
+function loadRcExport(entity: Entities) {
   const rl = readline.createInterface({
-    input: fs.createReadStream(`./inputs/${filename}`, {
+    input: fs.createReadStream(`./inputs/${entity}`, {
       encoding: 'utf-8',
     }),
     crlfDelay: Infinity,
   })
 
   rl.on('line', (line) => {
-    const entity: RcUser = JSON.parse(line)
-    log.debug(`User: ${entity.name}`)
+    const item = JSON.parse(line)
+    switch (entity) {
+      case Entities.Users:
+        log.debug(`User: ${item.name}`)
+        break
+
+      case Entities.Rooms:
+        log.debug(`Room: ${item.name}`)
+        break
+
+      case Entities.Messages:
+        log.debug(`Message: ${item.name}`)
+        break
+
+      default:
+        throw new Error(`Unhandled Entity: ${entity}`)
+    }
   })
 }
 
 async function main() {
   try {
     await whoami()
-    await loadRcExport('users.json')
+    await loadRcExport(Entities.Users)
   } catch (error) {
     log.error(`Encountered an error booting up`)
   }
