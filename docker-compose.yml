@@ -24,7 +24,6 @@ services:
     # instance expose the TLS port directly:
     ports:
       - 8008:8008/tcp
-    # ... or use a reverse proxy, here is an example for traefik:
 
   # db:
   #   image: docker.io/postgres:12-alpine
