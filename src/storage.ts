@@ -1,12 +1,12 @@
-export interface storage {
+export type storage = {
   users: {
     rcId: string
     matrixId: string
-    rcRooms: string[]
   }[]
   rooms: {
     rcId: string
     matrixId: string
+    members: string[]
   }[]
   messages: {
     rcId: string
@@ -24,7 +24,6 @@ export const storage: storage = {
     {
       rcId: '2ziHK8P748TeESitX',
       matrixId: '@herhde:locahlost',
-      rcRooms: [],
     },
   ],
   rooms: [],

@@ -12,7 +12,15 @@ const enum Entities {
   Messages = 'rocketchat_message.json',
 }
 
-function loadRcExport(entity: Entities) {
+type RcUser = {
+  username: string
+  name: string
+  roles: string[]
+  _id: string
+  __rooms: string[]
+}
+
+function loadRcExport(entity: Entities): Promise<void> {
   const rl = readline.createInterface({
     input: fs.createReadStream(`./inputs/${entity}`, {
       encoding: 'utf-8',
@@ -24,26 +32,43 @@ function loadRcExport(entity: Entities) {
     const item = JSON.parse(line)
     switch (entity) {
       case Entities.Users:
-        log.info(`User: ${item.name}: ${item._id}`)
+        const rcUser: RcUser = item
+        log.info(`User: ${rcUser.name}: ${rcUser._id}`)
 
         // Check for exclusion
-        if (storage.exclusionsLists.users.includes(item._id)) {
+        if (storage.exclusionsLists.users.includes(rcUser._id)) {
           log.debug('User excluded. Skipping.')
           break
         }
 
-        // Lookup
-        let userMapping = storage.users.find((e) => e.rcId === item._id)
+        let userMapping = storage.users.find((e) => e.rcId === rcUser._id) // Lookup mapping
         if (userMapping) {
           log.debug('Mapping exists:', userMapping)
         } else {
           userMapping = {
-            rcId: item._id,
-            matrixId: `@${item.username}:localhost`,
-            rcRooms: item.__rooms,
+            rcId: rcUser._id,
+            matrixId: `@${rcUser.username}:localhost`,
           }
-          storage.users.push(userMapping)
+          storage.users.push(userMapping) // Save new mapping
           log.debug('Mapping added:', userMapping)
+
+          // Add user to room mapping
+          rcUser.__rooms.forEach((rcRoomId: string) => {
+            const roomIndex = storage.rooms.findIndex(
+              (e) => e.rcId === rcRoomId
+            )
+            if (roomIndex >= 0) {
+              storage.rooms[roomIndex].members.push(rcUser._id)
+              log.debug(`Membership of ${rcUser.username} in ${rcRoomId} saved`)
+            } else {
+              storage.rooms.push({
+                rcId: rcRoomId,
+                matrixId: '',
+                members: [],
+              })
+              log.debug(`${rcUser.username} membership for ${rcRoomId} created`)
+            }
+          })
         }
 
         break
@@ -60,12 +85,18 @@ function loadRcExport(entity: Entities) {
         throw new Error(`Unhandled Entity: ${entity}`)
     }
   })
+  return new Promise((resolve, reject) => {
+    rl.on('close', () => {
+      resolve()
+    })
+  })
 }
 
 async function main() {
   try {
     await whoami()
     await loadRcExport(Entities.Users)
+    log.info('Done.')
   } catch (error) {
     log.error(`Encountered an error booting up`)
   }
