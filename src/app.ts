@@ -3,6 +3,7 @@ import readline from 'node:readline'
 import log from './logger'
 import { whoami } from './synapse'
 import { storage } from './storage'
+import { RcUser } from './users'
 
 log.info('rocketchat2matrix starts.')
 
@@ -10,14 +11,6 @@ const enum Entities {
   Users = 'users.json',
   Rooms = 'rocketchat_room.json',
   Messages = 'rocketchat_message.json',
-}
-
-type RcUser = {
-  username: string
-  name: string
-  roles: string[]
-  _id: string
-  __rooms: string[]
 }
 
 function loadRcExport(entity: Entities): Promise<void> {
