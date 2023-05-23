@@ -2,6 +2,8 @@ import fs from 'node:fs'
 import readline from 'node:readline'
 import log from './logger'
 import { whoami } from './synapse'
+import { storage } from './storage'
+
 log.info('rocketchat2matrix starts.')
 
 const enum Entities {
@@ -22,7 +24,28 @@ function loadRcExport(entity: Entities) {
     const item = JSON.parse(line)
     switch (entity) {
       case Entities.Users:
-        log.debug(`User: ${item.name}`)
+        log.info(`User: ${item.name}: ${item._id}`)
+
+        // Check for exclusion
+        if (storage.exclusionsLists.users.includes(item._id)) {
+          log.debug('User excluded. Skipping.')
+          break
+        }
+
+        // Lookup
+        let userMapping = storage.users.find((e) => e.rcId === item._id)
+        if (userMapping) {
+          log.debug('Mapping exists:', userMapping)
+        } else {
+          userMapping = {
+            rcId: item._id,
+            matrixId: `@${item.username}:localhost`,
+            rcRooms: item.__rooms,
+          }
+          storage.users.push(userMapping)
+          log.debug('Mapping added:', userMapping)
+        }
+
         break
 
       case Entities.Rooms:
