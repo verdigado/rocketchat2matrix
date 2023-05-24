@@ -35,17 +35,17 @@ function loadRcExport(entity: Entities): Promise<void> {
         }
 
         let userMapping = storage.users.find((e) => e.rcId === rcUser._id) // Lookup mapping
-        if (userMapping) {
+        if (userMapping && userMapping.matrixId) {
           log.debug('Mapping exists:', userMapping)
         } else {
           userMapping = {
             rcId: rcUser._id,
-            matrixId: `@${rcUser.username}:localhost`,
+            matrixId: `@${rcUser.username}:localhost`, // Create user on synapse
           }
           storage.users.push(userMapping) // Save new mapping
           log.debug('Mapping added:', userMapping)
 
-          // Add user to room mapping
+          // Add user to room mapping (specific to users)
           rcUser.__rooms.forEach((rcRoomId: string) => {
             const roomIndex = storage.rooms.findIndex(
               (e) => e.rcId === rcRoomId
@@ -91,7 +91,7 @@ async function main() {
     await loadRcExport(Entities.Users)
     log.info('Done.')
   } catch (error) {
-    log.error(`Encountered an error booting up`)
+    log.error(`Encountered an error while booting up`)
   }
 }
 

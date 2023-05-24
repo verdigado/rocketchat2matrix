@@ -6,7 +6,7 @@ services:
     image: docker.io/matrixdotorg/synapse:latest
     # Since synapse does not retry to connect to the database, restart upon
     # failure
-    restart: unless-stopped
+    restart: "no"
     # See the readme for a full documentation of the environment settings
     # NOTE: You must edit homeserver.yaml to use postgres, it defaults to sqlite
     environment:
@@ -46,4 +46,4 @@ services:
     image: awesometechnologies/synapse-admin:latest
     ports:
       - "8080:80"
-    restart: unless-stopped
+    restart: "no"
