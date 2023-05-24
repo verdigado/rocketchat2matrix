@@ -1,3 +1,4 @@
+import log from './logger'
 import { axios } from './synapse'
 import { createHmac } from 'node:crypto'
 
@@ -10,12 +11,12 @@ export type RcUser = {
 }
 
 export type MatrixUser = {
-  user_id?: string
-  nonce?: string
+  user_id: string
   username: string
   displayname: string
-  password?: string
+  password: string
   admin: boolean
+  nonce?: string
   mac?: string
 }
 
@@ -56,6 +57,10 @@ export async function createUser(rcUser: RcUser): Promise<MatrixUser> {
   user.nonce = await getUserRegistrationNonce()
   user.mac = generateHmac(user)
   user.user_id = await registerUser(user)
+  log.info(`User ${rcUser.username} created:`, user)
+
+  delete user.nonce
+  delete user.mac
 
   return user
 }

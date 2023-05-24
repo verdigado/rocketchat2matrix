@@ -3,7 +3,7 @@ import readline from 'node:readline'
 import log from './logger'
 import { whoami } from './synapse'
 import { storage } from './storage'
-import { RcUser } from './users'
+import { RcUser, createUser } from './users'
 
 log.info('rocketchat2matrix starts.')
 
@@ -21,7 +21,7 @@ function loadRcExport(entity: Entities): Promise<void> {
     crlfDelay: Infinity,
   })
 
-  rl.on('line', (line) => {
+  rl.on('line', async (line) => {
     const item = JSON.parse(line)
     switch (entity) {
       case Entities.Users:
@@ -29,7 +29,10 @@ function loadRcExport(entity: Entities): Promise<void> {
         log.info(`User: ${rcUser.name}: ${rcUser._id}`)
 
         // Check for exclusion
-        if (storage.exclusionsLists.users.includes(rcUser._id)) {
+        if (
+          rcUser.roles.some((e) => ['app', 'bot'].includes(e)) ||
+          storage.exclusionsLists.users.includes(rcUser._id)
+        ) {
           log.debug('User excluded. Skipping.')
           break
         }
@@ -38,9 +41,10 @@ function loadRcExport(entity: Entities): Promise<void> {
         if (userMapping && userMapping.matrixId) {
           log.debug('Mapping exists:', userMapping)
         } else {
+          const matrixUser = await createUser(rcUser)
           userMapping = {
             rcId: rcUser._id,
-            matrixId: `@${rcUser.username}:localhost`, // Create user on synapse
+            matrixId: matrixUser.user_id,
           }
           storage.users.push(userMapping) // Save new mapping
           log.debug('Mapping added:', userMapping)
