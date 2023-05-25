@@ -35,6 +35,10 @@ curl --request POST \
 > src/config/synapse_access_token.json
 ```
 
+## Configuration
+
+Copy over `.env.example` to `.env` and insert your values.
+
 ## Design Decisions
 
 - Getting data from Rocket.Chat via (currently) manual mongodb export

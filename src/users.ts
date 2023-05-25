@@ -30,8 +30,12 @@ export function mapUser(rcUser: RcUser): MatrixUser {
   }
 }
 
-const registration_shared_secret =
-  'vkq7zfBDt4A1NmMN6jJ*g+,G~.R:QuC_xI:~7~jQ_6kJ6O~JrG'
+const registration_shared_secret = process.env.REGISTRATION_SHARED_SECRET || ''
+if (!registration_shared_secret) {
+  const message = 'No REGISTRATION_SHARED_SECRET found in .env.'
+  log.error(message)
+  throw new Error(message)
+}
 
 function generateHmac(user: MatrixUser): string {
   const hmac = createHmac('sha1', registration_shared_secret)

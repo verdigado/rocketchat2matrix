@@ -1,9 +1,11 @@
+import dotenv from 'dotenv'
+dotenv.config()
 import fs from 'node:fs'
-import readline from 'node:readline'
 import log from './logger'
-import { whoami } from './synapse'
-import { storage } from './storage'
+import readline from 'node:readline'
 import { RcUser, createUser } from './users'
+import { storage } from './storage'
+import { whoami } from './synapse'
 
 log.info('rocketchat2matrix starts.')
 
