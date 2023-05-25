@@ -8,10 +8,16 @@
     "type": "git",
     "url": "https://git.verdigado.com/NB-Public/rocketchat2matrix"
   },
+  "lint-staged": {
+    "**/*.ts": [
+      "prettier --check",
+      "eslint --max-warnings 0"
+    ]
+  },
   "scripts": {
     "format": "prettier 'src/**/*.ts' --check",
     "format-fix": "prettier 'src/**/*.ts' --write",
-    "lint": "eslint src/ --ext .ts",
+    "lint": "eslint src/ --ext .ts --max-warnings 0",
     "lint-fix": "eslint src/ --fix --ext .ts",
     "prefix": "npm run format-fix",
     "fix": "npm run lint-fix",
@@ -33,6 +39,7 @@
     "eslint-plugin-prettier": "^4.2.1",
     "eslint-plugin-promise": "^6.1.1",
     "husky": "^8.0.3",
+    "lint-staged": "^13.2.2",
     "prettier": "2.8.8",
     "typescript": "^5.0.4"
   },
