@@ -4,7 +4,6 @@ import fs from 'node:fs'
 import log from './logger'
 import readline from 'node:readline'
 import { RcUser, createUser } from './users'
-import { storage } from './storage'
 import { whoami } from './synapse'
 import 'reflect-metadata'
 import { DataSource } from 'typeorm'
@@ -45,7 +44,10 @@ function loadRcExport(entity: Entities): Promise<void> {
         // Check for exclusion
         if (
           rcUser.roles.some((e) => ['app', 'bot'].includes(e)) ||
-          storage.exclusionsLists.users.includes(rcUser._id)
+          [
+            'rocket.cat',
+            '5kdLWNTys3u2MhB2H', // verdiadmin
+          ].includes(rcUser._id)
         ) {
           log.debug('User excluded. Skipping.')
           break
