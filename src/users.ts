@@ -3,10 +3,10 @@ import { axios } from './synapse'
 import { createHmac } from 'node:crypto'
 
 export type RcUser = {
+  _id: string
   username: string
   name: string
   roles: string[]
-  _id: string
   __rooms: string[]
 }
 
