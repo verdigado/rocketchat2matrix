@@ -6,8 +6,19 @@ import readline from 'node:readline'
 import { RcUser, createUser } from './users'
 import { storage } from './storage'
 import { whoami } from './synapse'
+import 'reflect-metadata'
+import { DataSource } from 'typeorm'
+import { IdMapping } from './entity/IdMapping'
 
 log.info('rocketchat2matrix starts.')
+
+const AppDataSource = new DataSource({
+  type: 'sqlite',
+  database: 'db.sqlite',
+  entities: [IdMapping],
+  synchronize: true,
+  logging: false,
+})
 
 const enum Entities {
   Users = 'users.json',
@@ -39,17 +50,21 @@ function loadRcExport(entity: Entities): Promise<void> {
           break
         }
 
-        let userMapping = storage.users.find((e) => e.rcId === rcUser._id) // Lookup mapping
-        if (userMapping && userMapping.matrixId) {
-          log.debug('Mapping exists:', userMapping)
+        let mapping = await AppDataSource.manager.findOneBy(IdMapping, {
+          rcId: rcUser._id,
+          type: 0,
+        })
+        if (mapping && mapping.matrixId) {
+          log.debug('Mapping exists:', mapping)
         } else {
           const matrixUser = await createUser(rcUser)
-          userMapping = {
-            rcId: rcUser._id,
-            matrixId: matrixUser.user_id,
-          }
-          storage.users.push(userMapping) // Save new mapping
-          log.debug('Mapping added:', userMapping)
+          mapping = new IdMapping()
+          mapping.rcId = rcUser._id
+          mapping.matrixId = matrixUser.user_id
+          mapping.type = 0
+
+          AppDataSource.manager.save(mapping) // Save new mapping
+          log.debug('Mapping added:', mapping)
 
           // Add user to room mapping (specific to users)
           rcUser.__rooms.forEach((rcRoomId: string) => {
@@ -94,6 +109,7 @@ function loadRcExport(entity: Entities): Promise<void> {
 async function main() {
   try {
     await whoami()
+    await AppDataSource.initialize()
     await loadRcExport(Entities.Users)
     log.info('Done.')
   } catch (error) {

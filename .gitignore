@@ -133,3 +133,5 @@ dist
 files/
 src/config/synapse_access_token.json
 inputs/
+db.sqlite
+db.sqlite-journal
