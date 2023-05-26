@@ -1,8 +1,7 @@
 import dotenv from 'dotenv'
 dotenv.config()
-import fs from 'node:fs'
+import lineByLine from 'n-readlines'
 import log from './logger'
-import readline from 'node:readline'
 import { RcUser, createUser } from './users'
 import { whoami } from './synapse'
 import 'reflect-metadata'
@@ -26,20 +25,16 @@ const enum Entities {
   Messages = 'rocketchat_message.json',
 }
 
-function loadRcExport(entity: Entities): Promise<void> {
-  const rl = readline.createInterface({
-    input: fs.createReadStream(`./inputs/${entity}`, {
-      encoding: 'utf-8',
-    }),
-    crlfDelay: Infinity,
-  })
+async function loadRcExport(entity: Entities) {
+  const rl = new lineByLine(`./inputs/${entity}`)
 
-  rl.on('line', async (line) => {
-    const item = JSON.parse(line)
+  let line: false | Buffer
+  while ((line = rl.next())) {
+    const item = JSON.parse(line.toString())
     switch (entity) {
       case Entities.Users:
         const rcUser: RcUser = item
-        log.info(`User: ${rcUser.name}: ${rcUser._id}`)
+        log.debug(`Parsing user: ${rcUser.name}: ${rcUser._id}`)
 
         // Check for exclusion
         if (
@@ -90,12 +85,7 @@ function loadRcExport(entity: Entities): Promise<void> {
       default:
         throw new Error(`Unhandled Entity: ${entity}`)
     }
-  })
-  return new Promise((resolve) => {
-    rl.on('close', () => {
-      resolve()
-    })
-  })
+  }
 }
 
 async function main() {
