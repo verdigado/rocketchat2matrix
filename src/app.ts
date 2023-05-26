@@ -9,13 +9,14 @@ import { whoami } from './synapse'
 import 'reflect-metadata'
 import { DataSource } from 'typeorm'
 import { IdMapping } from './entity/IdMapping'
+import { Membership } from './entity/Membership'
 
 log.info('rocketchat2matrix starts.')
 
 const AppDataSource = new DataSource({
   type: 'sqlite',
   database: 'db.sqlite',
-  entities: [IdMapping],
+  entities: [IdMapping, Membership],
   synchronize: true,
   logging: false,
 })
@@ -63,25 +64,17 @@ function loadRcExport(entity: Entities): Promise<void> {
           mapping.matrixId = matrixUser.user_id
           mapping.type = 0
 
-          AppDataSource.manager.save(mapping) // Save new mapping
+          AppDataSource.manager.save(mapping)
           log.debug('Mapping added:', mapping)
 
           // Add user to room mapping (specific to users)
-          rcUser.__rooms.forEach((rcRoomId: string) => {
-            const roomIndex = storage.rooms.findIndex(
-              (e) => e.rcId === rcRoomId
-            )
-            if (roomIndex >= 0) {
-              storage.rooms[roomIndex].members.push(rcUser._id)
-              log.debug(`Membership of ${rcUser.username} in ${rcRoomId} saved`)
-            } else {
-              storage.rooms.push({
-                rcId: rcRoomId,
-                matrixId: '',
-                members: [],
-              })
-              log.debug(`${rcUser.username} membership for ${rcRoomId} created`)
-            }
+          rcUser.__rooms.forEach(async (rcRoomId: string) => {
+            const membership = new Membership()
+            membership.rcRoomId = rcRoomId
+            membership.rcUserId = rcUser._id
+
+            await AppDataSource.manager.save(membership)
+            log.debug(`${rcUser.username} membership for ${rcRoomId} created`)
           })
         }
 
