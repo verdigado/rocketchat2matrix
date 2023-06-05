@@ -20,13 +20,33 @@ const AppDataSource = new DataSource({
 })
 
 const enum Entities {
-  Users = 'users.json',
-  Rooms = 'rocketchat_room.json',
-  Messages = 'rocketchat_message.json',
+  Users = 'users',
+  Rooms = 'rooms',
+  Messages = 'messages',
+}
+
+type EntityConfig = {
+  filename: string
+  mappingType: number
+}
+
+const entities: { [key in Entities]: EntityConfig } = {
+  users: {
+    filename: 'users.json',
+    mappingType: 0,
+  },
+  rooms: {
+    filename: 'rocketchat_room.json',
+    mappingType: 1,
+  },
+  messages: {
+    filename: 'rocketchat_message.json',
+    mappingType: 2,
+  },
 }
 
 async function loadRcExport(entity: Entities) {
-  const rl = new lineByLine(`./inputs/${entity}`)
+  const rl = new lineByLine(`./inputs/${entities[entity].filename}`)
 
   let line: false | Buffer
   while ((line = rl.next())) {
