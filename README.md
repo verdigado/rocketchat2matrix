@@ -43,6 +43,17 @@ Copy over `.env.example` to `.env` and insert your values.
 
 `npm test`.
 
+## Cleaning Up
+
+To clean up the Synapse server and loal storage database, run (while the containers are stopped)
+
+```shell
+sudo rm files/homeserver.db
+rm db.sqlite
+```
+
+Then you can restart with an empty but quite equal server, following the instructions above, excluding the `generate` command.
+
 ## Design Decisions
 
 - Getting data from Rocket.Chat via (currently) manual mongodb export
