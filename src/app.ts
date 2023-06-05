@@ -1,13 +1,13 @@
 import dotenv from 'dotenv'
 dotenv.config()
 import lineByLine from 'n-readlines'
-import log from './logger'
-import { RcUser, createUser } from './users'
-import { whoami } from './synapse'
 import 'reflect-metadata'
 import { DataSource } from 'typeorm'
 import { IdMapping } from './entity/IdMapping'
 import { Membership } from './entity/Membership'
+import log from './logger'
+import { whoami } from './synapse'
+import { RcUser, createUser } from './users'
 
 log.info('rocketchat2matrix starts.')
 
