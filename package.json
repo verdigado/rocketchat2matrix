@@ -21,13 +21,15 @@
     "lint-fix": "eslint src/ --fix --ext .ts",
     "prefix": "npm run format-fix",
     "fix": "npm run lint-fix",
-    "test": "echo \"Warning: no test specified\"",
+    "test": "jest",
     "compile": "rm -rf dist/ && tsc",
     "start": "npm run compile && node dist/app.js",
     "prepare": "husky install"
   },
   "version": "0.1.0",
   "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "@types/n-readlines": "^1.0.3",
     "@types/node": "^20.2.1",
     "@typescript-eslint/eslint-plugin": "^5.59.6",
     "@typescript-eslint/parser": "^5.59.6",
@@ -41,10 +43,16 @@
     "husky": "^8.0.3",
     "lint-staged": "^13.2.2",
     "prettier": "2.8.8",
+    "ts-jest": "^29.1.0",
     "typescript": "^5.0.4"
   },
   "dependencies": {
     "axios": "^1.4.0",
+    "dotenv": "^16.0.3",
+    "n-readlines": "^1.0.1",
+    "reflect-metadata": "^0.1.13",
+    "sqlite3": "^5.1.6",
+    "typeorm": "^0.3.16",
     "winston": "^3.8.2"
   }
 }

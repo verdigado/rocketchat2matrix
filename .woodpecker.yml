@@ -1,5 +1,7 @@
 variables:
   - &node_image 'node:20-alpine'
+  - &create_synapse_access_token >-
+    echo '{"user_id":"ci-dummy","access_token":"ci-dummy","home_server":"ci-dummy","device_id":"ci-dummy"}' > src/config/synapse_access_token.json
 
 pipeline:
   lint-markdown:
@@ -34,13 +36,14 @@ pipeline:
     commands:
       - npm run format
 
+  node-test:
+    image: *node_image
+    commands:
+      - *create_synapse_access_token
+      - npm test
+
   node-compile:
     image: *node_image
     commands:
-      - echo '{"user_id":"ci-dummy","access_token":"ci-dummy","home_server":"ci-dummy","device_id":"ci-dummy"}' > src/config/synapse_access_token.json
+      - *create_synapse_access_token
       - npm run compile
-
-  # node-test:
-  #   image: *node_image
-  #   commands:
-  #     - npm test
