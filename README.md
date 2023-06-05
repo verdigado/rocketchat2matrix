@@ -1,6 +1,6 @@
 # Rocket.Chat to Matrix Migration Script
 
-Drafts and more
+Drafts and more. **This is a work in progress!**
 
 ## Exporting RC data
 
