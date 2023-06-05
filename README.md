@@ -39,6 +39,10 @@ curl --request POST \
 
 Copy over `.env.example` to `.env` and insert your values.
 
+## Running Tests
+
+`npm test`.
+
 ## Design Decisions
 
 - Getting data from Rocket.Chat via (currently) manual mongodb export

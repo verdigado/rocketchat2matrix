@@ -42,7 +42,7 @@ test('creating users', async () => {
 
   expect(mockedAxios.get).toHaveBeenCalledWith('/_synapse/admin/v1/register')
   expect(mockedAxios.post).toHaveBeenCalled()
-  // The following test rails with an incorrect return value, for whatever reason.
+  // The following test fails with an incorrect return value, for whatever reason.
   // Probably because of mutated call logs in jest due to the `delete` or sth.
   // expect(mockedAxios.post).toHaveBeenCalledWith('/_synapse/admin/v1/register', {
   //   ...matrixUser,
