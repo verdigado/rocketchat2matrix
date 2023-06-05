@@ -19,13 +19,13 @@ Export them to `inputs/`
 ```shell
 docker-compose run --rm -e SYNAPSE_SERVER_NAME=my.matrix.host -e SYNAPSE_REPORT_STATS=no synapse generate
 docker-compose up -d
-# Register a admin user
+# Register an admin user
 docker-compose exec -it synapse register_new_matrix_user http://localhost:8008 -c /data/homeserver.yaml --admin --user verdiadmin --password verdiadmin
 ```
 
 Then you can access the homeserver in [Element Web](https://app.element.io/#/login) or the [local admin interface](http://localhost:8080) as `http://localhost:8008` with the `verdiadmin` as username AND password.
 
-You can store an access token for that user:
+Store an access token for that user:
 
 ```shell
 curl --request POST \
@@ -34,6 +34,8 @@ curl --request POST \
   --data '{"type": "m.login.password","user": "verdiadmin","password": "verdiadmin","device_id": "DEV"}' \
 > src/config/synapse_access_token.json
 ```
+
+To finally run the script, execute it via `npm start`.
 
 ## Configuration
 
@@ -45,7 +47,7 @@ Copy over `.env.example` to `.env` and insert your values.
 
 ## Cleaning Up
 
-To clean up the Synapse server and loal storage database, run (while the containers are stopped)
+To clean up the Synapse server and local storage database, run (while the containers are stopped)
 
 ```shell
 sudo rm files/homeserver.db
