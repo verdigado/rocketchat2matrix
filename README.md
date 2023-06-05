@@ -1,6 +1,6 @@
 # Rocket.Chat to Matrix Migration Script
 
-Drafts and more
+Drafts and more. **This is a work in progress!**
 
 ## Exporting RC data
 
@@ -42,6 +42,17 @@ Copy over `.env.example` to `.env` and insert your values.
 ## Running Tests
 
 `npm test`.
+
+## Cleaning Up
+
+To clean up the Synapse server and loal storage database, run (while the containers are stopped)
+
+```shell
+sudo rm files/homeserver.db
+rm db.sqlite
+```
+
+Then you can restart with an empty but quite equal server, following the instructions above, excluding the `generate` command.
 
 ## Design Decisions
 
