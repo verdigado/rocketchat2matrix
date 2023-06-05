@@ -37,7 +37,7 @@ if (!registration_shared_secret) {
   throw new Error(message)
 }
 
-function generateHmac(user: MatrixUser): string {
+export function generateHmac(user: MatrixUser): string {
   const hmac = createHmac('sha1', registration_shared_secret)
   hmac.write(
     `${user.nonce}\0${user.username}\0${user.password}\0${

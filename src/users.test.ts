@@ -1,6 +1,6 @@
 process.env.REGISTRATION_SHARED_SECRET = 'ThisIsSoSecretWow'
 import axios from 'axios'
-import { RcUser, MatrixUser, mapUser, createUser } from './users'
+import { MatrixUser, RcUser, createUser, generateHmac, mapUser } from './users'
 
 jest.mock('axios')
 const mockedAxios = axios as jest.Mocked<typeof axios>
@@ -21,12 +21,18 @@ const matrixUser: MatrixUser = {
   admin: false,
 }
 
+const nonce = 'test-nonce'
+
 test('mapping users', () => {
   expect(mapUser(rcUser)).toStrictEqual(matrixUser)
 })
+test('generating correct hmac', () => {
+  expect(generateHmac({ ...matrixUser, nonce })).toStrictEqual(
+    'be0537407ab3c82de908c5763185556e98a7211c'
+  )
+})
 
 test('creating users', async () => {
-  const nonce = 'test-nonce'
   const matrixId = 'TestRandomId'
 
   mockedAxios.get.mockResolvedValue({ data: { nonce: nonce } })
