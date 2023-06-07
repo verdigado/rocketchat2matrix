@@ -57,6 +57,7 @@ async function loadRcExport(entity: Entities) {
           mapping.rcId = rcUser._id
           mapping.matrixId = matrixUser.user_id
           mapping.type = 0
+          mapping.accessToken = matrixUser.access_token
 
           AppDataSource.manager.save(mapping)
           log.debug('Mapping added:', mapping)

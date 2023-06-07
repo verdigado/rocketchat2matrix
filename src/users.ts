@@ -18,6 +18,14 @@ export type MatrixUser = {
   admin: boolean
   nonce?: string
   mac?: string
+  access_token?: string
+}
+
+export type AccessToken = {
+  access_token: string
+  device_id: string
+  home_server: string
+  user_id: string
 }
 
 export function mapUser(rcUser: RcUser): MatrixUser {
@@ -52,15 +60,17 @@ async function getUserRegistrationNonce(): Promise<string> {
   return (await axios.get('/_synapse/admin/v1/register')).data.nonce
 }
 
-async function registerUser(user: MatrixUser): Promise<string> {
-  return (await axios.post('/_synapse/admin/v1/register', user)).data.user_id
+async function registerUser(user: MatrixUser): Promise<AccessToken> {
+  return (await axios.post('/_synapse/admin/v1/register', user)).data
 }
 
 export async function createUser(rcUser: RcUser): Promise<MatrixUser> {
   const user = mapUser(rcUser)
   user.nonce = await getUserRegistrationNonce()
   user.mac = generateHmac(user)
-  user.user_id = await registerUser(user)
+  const accessToken = await registerUser(user)
+  user.user_id = accessToken.user_id
+  user.access_token = accessToken.access_token
   log.info(`User ${rcUser.username} created:`, user)
 
   delete user.nonce
