@@ -19,7 +19,7 @@ Export them to `inputs/`
 ```shell
 docker-compose run --rm -e SYNAPSE_SERVER_NAME=my.matrix.host -e SYNAPSE_REPORT_STATS=no synapse generate
 docker-compose up -d
-# Register an admin user
+# Wait for the Server to boot, then register an admin user
 docker-compose exec -it synapse register_new_matrix_user http://localhost:8008 -c /data/homeserver.yaml --admin --user verdiadmin --password verdiadmin
 ```
 

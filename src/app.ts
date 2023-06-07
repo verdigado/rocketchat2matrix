@@ -2,22 +2,14 @@ import dotenv from 'dotenv'
 dotenv.config()
 import lineByLine from 'n-readlines'
 import 'reflect-metadata'
-import { DataSource } from 'typeorm'
 import { IdMapping } from './entity/IdMapping'
 import { Membership } from './entity/Membership'
-import log from './logger'
-import { whoami } from './synapse'
+import log from './helpers/logger'
+import { whoami } from './helpers/synapse'
 import { RcUser, createUser } from './users'
+import { getMapping, save, setMapping } from './helpers/storage'
 
 log.info('rocketchat2matrix starts.')
-
-const AppDataSource = new DataSource({
-  type: 'sqlite',
-  database: 'db.sqlite',
-  entities: [IdMapping, Membership],
-  synchronize: true,
-  logging: false,
-})
 
 const enum Entities {
   Users = 'users',
@@ -65,10 +57,7 @@ async function loadRcExport(entity: Entities) {
           break
         }
 
-        let mapping = await AppDataSource.manager.findOneBy(IdMapping, {
-          rcId: rcUser._id,
-          type: 0,
-        })
+        let mapping = await getMapping(rcUser._id, entities[entity].mappingType)
         if (mapping && mapping.matrixId) {
           log.debug('Mapping exists:', mapping)
         } else {
@@ -79,7 +68,7 @@ async function loadRcExport(entity: Entities) {
           mapping.type = 0
           mapping.accessToken = matrixUser.access_token
 
-          AppDataSource.manager.save(mapping)
+          await save(mapping)
           log.debug('Mapping added:', mapping)
 
           // Add user to room mapping (specific to users)
@@ -88,7 +77,7 @@ async function loadRcExport(entity: Entities) {
             membership.rcRoomId = rcRoomId
             membership.rcUserId = rcUser._id
 
-            await AppDataSource.manager.save(membership)
+            await save(membership)
             log.debug(`${rcUser.username} membership for ${rcRoomId} created`)
           })
         }
