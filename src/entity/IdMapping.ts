@@ -3,11 +3,14 @@ import { Entity, Column, PrimaryColumn } from 'typeorm'
 @Entity()
 export class IdMapping {
   @PrimaryColumn()
-  rcId!: string
+  rcId!: string // Rocket.Chat ID of the entity
 
   @Column()
-  matrixId?: string
+  matrixId?: string // Matrix ID of the entity
 
   @Column('integer')
-  type!: number
+  type!: number // Type of the entity; 0 = user, 1 = room, 2 = message
+
+  @Column()
+  accessToken?: string // Access token for matrix users
 }

@@ -34,16 +34,18 @@ test('generating correct hmac', () => {
 
 test('creating users', async () => {
   const matrixId = 'TestRandomId'
+  const accessToken = 'secretaccesstoken'
 
   mockedAxios.get.mockResolvedValue({ data: { nonce: nonce } })
   mockedAxios.post.mockResolvedValue({
-    data: { user_id: matrixId },
+    data: { user_id: matrixId, access_token: accessToken },
   })
 
   const createdUser = await createUser(rcUser)
   expect(createdUser).toStrictEqual({
     ...matrixUser,
     user_id: matrixId,
+    access_token: accessToken,
   })
 
   expect(mockedAxios.get).toHaveBeenCalledWith('/_synapse/admin/v1/register')
