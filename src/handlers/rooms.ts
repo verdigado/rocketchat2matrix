@@ -1,6 +1,5 @@
-import log from './helpers/logger'
-import { getAccessToken } from './helpers/storage'
-import { axios, getUserSessionOptions } from './helpers/synapse'
+import log from '../helpers/logger'
+import { axios, getUserSessionOptions } from '../helpers/synapse'
 import { RcUser } from './users'
 
 export const enum RcRoomTypes {
@@ -36,7 +35,7 @@ export type MatrixRoom = {
   topic?: string
   is_direct?: boolean
   preset?: MatrixRoomPresets
-  _creatorId?: string
+  _creatorId: string
 }
 
 export function mapRoom(rcRoom: RcRoom): MatrixRoom {
@@ -44,6 +43,7 @@ export function mapRoom(rcRoom: RcRoom): MatrixRoom {
     creation_content: {
       'm.federate': false,
     },
+    _creatorId: '',
   }
   rcRoom.name && (room.name = rcRoom.name)
   rcRoom.name && (room.room_alias_name = rcRoom.name)
@@ -53,23 +53,28 @@ export function mapRoom(rcRoom: RcRoom): MatrixRoom {
     case 'd':
       room.is_direct = true
       room.preset = MatrixRoomPresets.trusted
-      room._creatorId = rcRoom.uids?.[0]
+      room._creatorId = rcRoom.uids?.[0] || ''
       break
 
     case 'c':
       room.preset = MatrixRoomPresets.public
-      room._creatorId = rcRoom.u?._id
+      room._creatorId = rcRoom.u?._id || ''
       break
 
     case 'p':
       room.preset = MatrixRoomPresets.private
-      room._creatorId = rcRoom.u?._id
+      room._creatorId = rcRoom.u?._id || ''
       break
 
     default:
       const message = `Room type ${rcRoom.t} is unknown`
       log.error(message)
       throw new Error(message)
+  }
+  if (!room._creatorId) {
+    const message = `Creator ID could not be determined for room of type ${rcRoom.t}`
+    log.error(message)
+    throw new Error(message)
   }
   return room
 }
@@ -80,7 +85,7 @@ export async function createRoom(rcRoom: RcRoom): Promise<MatrixRoom> {
     await axios.post(
       '/_matrix/client/v3/createRoom',
       room,
-      await getUserSessionOptions(room._creatorId!)
+      await getUserSessionOptions(room._creatorId)
     )
   ).data.room_id
 

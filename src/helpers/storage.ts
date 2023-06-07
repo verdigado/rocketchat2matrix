@@ -10,6 +10,10 @@ const AppDataSource = new DataSource({
   logging: false,
 })
 
+export async function initStorage() {
+  await AppDataSource.initialize()
+}
+
 export function getMapping(id: string, type: number) {
   return AppDataSource.manager.findOneBy(IdMapping, {
     rcId: id,

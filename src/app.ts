@@ -4,10 +4,10 @@ import lineByLine from 'n-readlines'
 import 'reflect-metadata'
 import { IdMapping } from './entity/IdMapping'
 import { Membership } from './entity/Membership'
+import { RcUser, createUser } from './handlers/users'
 import log from './helpers/logger'
+import { getMapping, initStorage, save } from './helpers/storage'
 import { whoami } from './helpers/synapse'
-import { RcUser, createUser } from './users'
-import { getMapping, save, setMapping } from './helpers/storage'
 
 log.info('rocketchat2matrix starts.')
 
@@ -101,7 +101,7 @@ async function loadRcExport(entity: Entities) {
 async function main() {
   try {
     await whoami()
-    await AppDataSource.initialize()
+    await initStorage()
     await loadRcExport(Entities.Users)
     log.info('Done.')
   } catch (error) {

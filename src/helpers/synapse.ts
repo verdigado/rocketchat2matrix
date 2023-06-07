@@ -1,5 +1,5 @@
-import { access_token } from '../config/synapse_access_token.json'
 import axios from 'axios'
+import { access_token } from '../config/synapse_access_token.json'
 import log from './logger'
 import { getAccessToken } from './storage'
 
