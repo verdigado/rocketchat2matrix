@@ -47,9 +47,10 @@ Copy over `.env.example` to `.env` and insert your values.
 
 ## Cleaning Up
 
-To clean up the Synapse server and local storage database, run (while the containers are stopped)
+To clean up the Synapse server and local storage database, run
 
 ```shell
+docker-compose down
 sudo rm files/homeserver.db
 rm db.sqlite
 ```
