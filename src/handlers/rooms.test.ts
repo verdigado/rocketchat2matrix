@@ -1,4 +1,9 @@
-import { MatrixRoomPresets, RcRoomTypes, mapRoom } from './rooms'
+import {
+  MatrixRoomPresets,
+  MatrixRoomVisibility,
+  RcRoomTypes,
+  mapRoom,
+} from './rooms'
 
 const roomCreator = {
   _id: 'roomcreatorid',
@@ -44,6 +49,7 @@ test('mapping public rooms', () => {
     creation_content: {
       'm.federate': false,
     },
+    visibility: MatrixRoomVisibility.public,
     _creatorId: roomCreator._id,
   })
 })

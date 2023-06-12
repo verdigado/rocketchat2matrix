@@ -27,6 +27,11 @@ export const enum MatrixRoomPresets {
   trusted = 'trusted_private_chat',
 }
 
+export const enum MatrixRoomVisibility {
+  private = 'private',
+  public = 'public',
+}
+
 export type MatrixRoom = {
   room_id?: string
   name?: string
@@ -35,6 +40,7 @@ export type MatrixRoom = {
   topic?: string
   is_direct?: boolean
   preset?: MatrixRoomPresets
+  visibility?: MatrixRoomVisibility
   _creatorId?: string
 }
 
@@ -50,24 +56,26 @@ export function mapRoom(rcRoom: RcRoom): MatrixRoom {
   rcRoom.description && (room.topic = rcRoom.description)
 
   switch (rcRoom.t) {
-    case 'd':
+    case RcRoomTypes.direct:
       room.is_direct = true
       room.preset = MatrixRoomPresets.trusted
       room._creatorId = rcRoom.uids?.[0] || ''
       break
 
-    case 'c':
+    case RcRoomTypes.chat:
       room.preset = MatrixRoomPresets.public
+      room.visibility = MatrixRoomVisibility.public
       room._creatorId = rcRoom.u?._id || ''
       break
 
-    case 'p':
+    case RcRoomTypes.private:
       room.preset = MatrixRoomPresets.private
       room._creatorId = rcRoom.u?._id || ''
       break
 
+    case RcRoomTypes.live:
     default:
-      const message = `Room type ${rcRoom.t} is unknown`
+      const message = `Room type ${rcRoom.t} is unknown or unimplemented`
       log.error(message)
       throw new Error(message)
   }
@@ -98,7 +106,7 @@ export async function createRoom(rcRoom: RcRoom): Promise<MatrixRoom> {
     await axios.post('/_matrix/client/v3/createRoom', room, sessionOptions)
   ).data.room_id
 
-  // TODO: Add members
+  // TODO: Invite members and let them join
 
   return room
 }
