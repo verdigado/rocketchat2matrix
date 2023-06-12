@@ -8,6 +8,7 @@ import { RcUser, createUser } from './handlers/users'
 import log from './helpers/logger'
 import { getMapping, initStorage, save } from './helpers/storage'
 import { whoami } from './helpers/synapse'
+import { RcRoom, createRoom } from './handlers/rooms'
 
 log.info('rocketchat2matrix starts.')
 
@@ -65,7 +66,7 @@ async function loadRcExport(entity: Entities) {
           mapping = new IdMapping()
           mapping.rcId = rcUser._id
           mapping.matrixId = matrixUser.user_id
-          mapping.type = 0
+          mapping.type = entities[entity].mappingType
           mapping.accessToken = matrixUser.access_token
 
           await save(mapping)
@@ -85,7 +86,25 @@ async function loadRcExport(entity: Entities) {
         break
 
       case Entities.Rooms:
-        log.debug(`Room: ${item.name}`)
+        const rcRoom: RcRoom = item
+        log.debug(`Room: ${rcRoom.name}`, rcRoom)
+
+        let roomMapping = await getMapping(
+          rcRoom._id,
+          entities[entity].mappingType
+        )
+        if (roomMapping && roomMapping.matrixId) {
+          log.debug('Mapping exists:', roomMapping)
+        } else {
+          const matrixRoom = await createRoom(rcRoom)
+          roomMapping = new IdMapping()
+          roomMapping.rcId = rcRoom._id
+          roomMapping.matrixId = matrixRoom.room_id
+          roomMapping.type = entities[entity].mappingType
+
+          await save(roomMapping)
+          log.debug('Mapping added:', roomMapping)
+        }
         break
 
       case Entities.Messages:
@@ -102,10 +121,11 @@ async function main() {
   try {
     await whoami()
     await initStorage()
-    await loadRcExport(Entities.Users)
+    // await loadRcExport(Entities.Users)
+    await loadRcExport(Entities.Rooms)
     log.info('Done.')
   } catch (error) {
-    log.error(`Encountered an error while booting up`)
+    log.error(`Encountered an error while booting up: ${error}`)
   }
 }
 

@@ -35,7 +35,7 @@ export type MatrixRoom = {
   topic?: string
   is_direct?: boolean
   preset?: MatrixRoomPresets
-  _creatorId: string
+  _creatorId?: string
 }
 
 export function mapRoom(rcRoom: RcRoom): MatrixRoom {
@@ -72,22 +72,33 @@ export function mapRoom(rcRoom: RcRoom): MatrixRoom {
       throw new Error(message)
   }
   if (!room._creatorId) {
-    const message = `Creator ID could not be determined for room of type ${rcRoom.t}`
-    log.error(message)
-    throw new Error(message)
+    log.warn(
+      `Creator ID could not be determined for room ${rcRoom.name} of type ${rcRoom.t}.`
+    )
   }
   return room
 }
 
 export async function createRoom(rcRoom: RcRoom): Promise<MatrixRoom> {
   const room: MatrixRoom = mapRoom(rcRoom)
+  let sessionOptions = {}
+  if (room._creatorId) {
+    try {
+      sessionOptions = await getUserSessionOptions(room._creatorId)
+      log.debug('Room user session generated:', sessionOptions)
+    } catch (error) {
+      log.warn(error)
+      // TODO: Skip room, if it has 0-1 member or is a direct chat?
+    }
+  }
+  log.debug('Creating room:', room)
+  delete room._creatorId
+
   room.room_id = (
-    await axios.post(
-      '/_matrix/client/v3/createRoom',
-      room,
-      await getUserSessionOptions(room._creatorId)
-    )
+    await axios.post('/_matrix/client/v3/createRoom', room, sessionOptions)
   ).data.room_id
+
+  // TODO: Add members
 
   return room
 }
