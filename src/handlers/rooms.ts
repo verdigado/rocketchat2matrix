@@ -45,7 +45,7 @@ export type MatrixRoom = {
   _creatorId?: string
 }
 
-export function mapRoom(rcRoom: RcRoom): MatrixRoom {
+export async function mapRoom(rcRoom: RcRoom): Promise<MatrixRoom> {
   const room: MatrixRoom = {
     creation_content: {
       'm.federate': false,
@@ -63,7 +63,7 @@ export function mapRoom(rcRoom: RcRoom): MatrixRoom {
       room._creatorId = rcRoom.uids?.[0] || ''
 
       if (rcRoom.uids) {
-        Promise.all(
+        await Promise.all(
           rcRoom.uids.map(async (uid) => {
             await createMembership(rcRoom._id, uid)
             log.debug(`${uid} membership in direct chat ${rcRoom._id} created`)
@@ -100,7 +100,7 @@ export function mapRoom(rcRoom: RcRoom): MatrixRoom {
 }
 
 export async function createRoom(rcRoom: RcRoom): Promise<MatrixRoom> {
-  const room: MatrixRoom = mapRoom(rcRoom)
+  const room: MatrixRoom = await mapRoom(rcRoom)
   let sessionOptions = {}
   if (room._creatorId) {
     try {

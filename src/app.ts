@@ -77,7 +77,7 @@ async function loadRcExport(entity: Entities) {
           log.debug('Mapping added:', mapping)
 
           // Add user to room mapping (specific to users)
-          Promise.all(
+          await Promise.all(
             rcUser.__rooms.map(async (rcRoomId: string) => {
               await createMembership(rcRoomId, rcUser._id)
               log.debug(`${rcUser.username} membership for ${rcRoomId} created`)
@@ -123,11 +123,13 @@ async function main() {
   try {
     await whoami()
     await initStorage()
+    log.info('Parsing users')
     await loadRcExport(Entities.Users)
+    log.info('Parsing rooms')
     await loadRcExport(Entities.Rooms)
     log.info('Done.')
   } catch (error) {
-    log.error(`Encountered an error while booting up: ${error}`)
+    log.error(`Encountered an error while booting up: ${error}`, error)
   }
 }
 
