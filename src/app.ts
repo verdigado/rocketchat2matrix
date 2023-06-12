@@ -3,10 +3,14 @@ dotenv.config()
 import lineByLine from 'n-readlines'
 import 'reflect-metadata'
 import { IdMapping } from './entity/IdMapping'
-import { Membership } from './entity/Membership'
 import { RcUser, createUser } from './handlers/users'
 import log from './helpers/logger'
-import { getMapping, initStorage, save } from './helpers/storage'
+import {
+  createMembership,
+  getMapping,
+  initStorage,
+  save,
+} from './helpers/storage'
 import { whoami } from './helpers/synapse'
 import { RcRoom, createRoom } from './handlers/rooms'
 
@@ -73,14 +77,12 @@ async function loadRcExport(entity: Entities) {
           log.debug('Mapping added:', mapping)
 
           // Add user to room mapping (specific to users)
-          rcUser.__rooms.forEach(async (rcRoomId: string) => {
-            const membership = new Membership()
-            membership.rcRoomId = rcRoomId
-            membership.rcUserId = rcUser._id
-
-            await save(membership)
-            log.debug(`${rcUser.username} membership for ${rcRoomId} created`)
-          })
+          Promise.all(
+            rcUser.__rooms.map(async (rcRoomId: string) => {
+              await createMembership(rcRoomId, rcUser._id)
+              log.debug(`${rcUser.username} membership for ${rcRoomId} created`)
+            })
+          )
         }
 
         break
@@ -121,7 +123,7 @@ async function main() {
   try {
     await whoami()
     await initStorage()
-    // await loadRcExport(Entities.Users)
+    await loadRcExport(Entities.Users)
     await loadRcExport(Entities.Rooms)
     log.info('Done.')
   } catch (error) {

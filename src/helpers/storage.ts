@@ -28,3 +28,11 @@ export async function save(entity: IdMapping | Membership) {
 export async function getAccessToken(id: string) {
   return (await getMapping(id, 0))?.accessToken
 }
+
+export async function createMembership(rcRoomId: string, rcUserId: string) {
+  const membership = new Membership()
+  membership.rcRoomId = rcRoomId
+  membership.rcUserId = rcUserId
+
+  await save(membership)
+}

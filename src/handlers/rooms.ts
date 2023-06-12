@@ -1,4 +1,5 @@
 import log from '../helpers/logger'
+import { createMembership } from '../helpers/storage'
 import { axios, getUserSessionOptions } from '../helpers/synapse'
 import { RcUser } from './users'
 
@@ -60,6 +61,17 @@ export function mapRoom(rcRoom: RcRoom): MatrixRoom {
       room.is_direct = true
       room.preset = MatrixRoomPresets.trusted
       room._creatorId = rcRoom.uids?.[0] || ''
+
+      if (rcRoom.uids) {
+        Promise.all(
+          rcRoom.uids.map(async (uid) => {
+            await createMembership(rcRoom._id, uid)
+            log.debug(`${uid} membership in direct chat ${rcRoom._id} created`)
+          })
+        )
+      } else {
+        throw new Error('Found a direct chat without uids. This is unexpected.')
+      }
       break
 
     case RcRoomTypes.chat:
