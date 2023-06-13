@@ -64,10 +64,13 @@ export async function mapRoom(rcRoom: RcRoom): Promise<MatrixRoom> {
 
       if (rcRoom.uids) {
         await Promise.all(
-          rcRoom.uids.map(async (uid) => {
-            await createMembership(rcRoom._id, uid)
-            log.debug(`${uid} membership in direct chat ${rcRoom._id} created`)
-          })
+          [...new Set(rcRoom.uids)] // Deduplicate users
+            .map(async (uid) => {
+              await createMembership(rcRoom._id, uid)
+              log.debug(
+                `${uid} membership in direct chat ${rcRoom._id} created`
+              )
+            })
         )
       } else {
         throw new Error('Found a direct chat without uids. This is unexpected.')
