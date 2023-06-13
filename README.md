@@ -18,6 +18,36 @@ Export them to `inputs/`
 
 ```shell
 docker-compose run --rm -e SYNAPSE_SERVER_NAME=my.matrix.host -e SYNAPSE_REPORT_STATS=no synapse generate
+```
+
+To run the script without hitting rate limiting, you SHOULD add the following options to the freshly generated `files/homeserver.yaml`. **Do not leave these in the production setup!**
+
+```yaml
+rc_joins:
+  local:
+    per_second: 1024
+    burst_count: 2048
+rc_joins_per_room:
+  per_second: 1024
+  burst_count: 2048
+rc_message:
+  per_second: 1024
+  burst_count: 2048
+rc_invites:
+  per_room:
+    per_second: 1024
+    burst_count: 2048
+  per_user:
+    per_second: 1024
+    burst_count: 2048
+  per_issuer:
+    per_second: 1024
+    burst_count: 2048
+```
+
+Continue setting up the server:
+
+```shell
 docker-compose up -d
 # Wait for the Server to boot, then register an admin user
 docker-compose exec -it synapse register_new_matrix_user http://localhost:8008 -c /data/homeserver.yaml --admin --user verdiadmin --password verdiadmin
