@@ -11,6 +11,6 @@ export class IdMapping {
   @Column('integer')
   type!: number // Type of the entity; 0 = user, 1 = room, 2 = message
 
-  @Column()
+  @Column({ nullable: true })
   accessToken?: string // Access token for matrix users
 }

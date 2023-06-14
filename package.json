@@ -21,7 +21,7 @@
     "lint-fix": "eslint src/ --fix --ext .ts",
     "prefix": "npm run format-fix",
     "fix": "npm run lint-fix",
-    "test": "jest",
+    "test": "rm -rf dist/ && jest",
     "compile": "rm -rf dist/ && tsc",
     "start": "npm run compile && node dist/app.js",
     "prepare": "husky install"

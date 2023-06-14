@@ -1,6 +1,12 @@
 process.env.REGISTRATION_SHARED_SECRET = 'ThisIsSoSecretWow'
 import axios from 'axios'
-import { MatrixUser, RcUser, createUser, generateHmac, mapUser } from './users'
+import {
+  MatrixUser,
+  RcUser,
+  createUser,
+  generateHmac,
+  mapUser,
+} from '../handlers/users'
 
 jest.mock('axios')
 const mockedAxios = axios as jest.Mocked<typeof axios>

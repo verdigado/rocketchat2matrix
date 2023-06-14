@@ -1,6 +1,6 @@
-import log from './logger'
-import { axios } from './synapse'
 import { createHmac } from 'node:crypto'
+import log from '../helpers/logger'
+import { axios } from '../helpers/synapse'
 
 export type RcUser = {
   _id: string
