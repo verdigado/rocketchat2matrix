@@ -45,7 +45,7 @@ export type MatrixRoom = {
   _creatorId?: string
 }
 
-export async function mapRoom(rcRoom: RcRoom): Promise<MatrixRoom> {
+export function mapRoom(rcRoom: RcRoom): MatrixRoom {
   const room: MatrixRoom = {
     creation_content: {
       'm.federate': false,
@@ -61,20 +61,6 @@ export async function mapRoom(rcRoom: RcRoom): Promise<MatrixRoom> {
       room.is_direct = true
       room.preset = MatrixRoomPresets.trusted
       room._creatorId = rcRoom.uids?.[0] || ''
-
-      if (rcRoom.uids) {
-        await Promise.all(
-          [...new Set(rcRoom.uids)] // Deduplicate users
-            .map(async (uid) => {
-              await createMembership(rcRoom._id, uid)
-              log.debug(
-                `${uid} membership in direct chat ${rcRoom._id} created`
-              )
-            })
-        )
-      } else {
-        throw new Error('Found a direct chat without uids. This is unexpected.')
-      }
       break
 
     case RcRoomTypes.chat:
@@ -102,8 +88,21 @@ export async function mapRoom(rcRoom: RcRoom): Promise<MatrixRoom> {
   return room
 }
 
+export async function parseMemberships(rcRoom: RcRoom) {
+  if (rcRoom.t == RcRoomTypes.direct && rcRoom.uids) {
+    await Promise.all(
+      [...new Set(rcRoom.uids)] // Deduplicate users
+        .map(async (uid) => {
+          await createMembership(rcRoom._id, uid)
+          log.debug(`${uid} membership in direct chat ${rcRoom._id} created`)
+        })
+    )
+  }
+}
+
 export async function createRoom(rcRoom: RcRoom): Promise<MatrixRoom> {
-  const room: MatrixRoom = await mapRoom(rcRoom)
+  const room: MatrixRoom = mapRoom(rcRoom)
+  await parseMemberships(rcRoom)
   let sessionOptions = {}
   if (room._creatorId) {
     try {
