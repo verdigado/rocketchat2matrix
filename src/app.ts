@@ -51,7 +51,7 @@ async function loadRcExport(entity: Entities) {
     switch (entity) {
       case Entities.Users:
         const rcUser: RcUser = item
-        log.debug(`Parsing user: ${rcUser.name}: ${rcUser._id}`)
+        log.info(`Parsing user: ${rcUser.name}: ${rcUser._id}`)
 
         // Check for exclusion
         if (
@@ -89,7 +89,7 @@ async function loadRcExport(entity: Entities) {
 
       case Entities.Rooms:
         const rcRoom: RcRoom = item
-        log.debug(`Room: ${rcRoom.name}`, rcRoom)
+        log.info(`Parsing room ${rcRoom.name || 'with ID: ' + rcRoom._id}`)
 
         let roomMapping = await getMapping(
           rcRoom._id,

@@ -36,3 +36,16 @@ export async function createMembership(rcRoomId: string, rcUserId: string) {
 
   await save(membership)
 }
+
+export async function getMemberships(rcRoomId: string) {
+  return (
+    await AppDataSource.manager.find(Membership, {
+      select: {
+        rcUserId: true,
+      },
+      where: {
+        rcRoomId: rcRoomId,
+      },
+    })
+  ).map((entity) => entity.rcUserId)
+}

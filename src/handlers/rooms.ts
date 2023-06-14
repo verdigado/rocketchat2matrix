@@ -1,5 +1,10 @@
+import { IdMapping } from '../entity/IdMapping'
 import log from '../helpers/logger'
-import { createMembership } from '../helpers/storage'
+import {
+  createMembership,
+  getMapping,
+  getMemberships,
+} from '../helpers/storage'
 import { axios, getUserSessionOptions } from '../helpers/synapse'
 import { RcUser } from './users'
 
@@ -102,11 +107,13 @@ export async function parseMemberships(rcRoom: RcRoom) {
 
 export async function createRoom(rcRoom: RcRoom): Promise<MatrixRoom> {
   const room: MatrixRoom = mapRoom(rcRoom)
+  const creatorId = room._creatorId || ''
+  delete room._creatorId
   await parseMemberships(rcRoom)
   let sessionOptions = {}
   if (room._creatorId) {
     try {
-      sessionOptions = await getUserSessionOptions(room._creatorId)
+      sessionOptions = await getUserSessionOptions(creatorId)
       log.debug('Room user session generated:', sessionOptions)
     } catch (error) {
       log.warn(error)
@@ -114,13 +121,46 @@ export async function createRoom(rcRoom: RcRoom): Promise<MatrixRoom> {
     }
   }
   log.debug('Creating room:', room)
-  delete room._creatorId
 
   room.room_id = (
     await axios.post('/_matrix/client/v3/createRoom', room, sessionOptions)
   ).data.room_id
 
   // TODO: Invite members and let them join
+  const members = await getMemberships(rcRoom._id)
+  log.info(`Inviting members to room ${rcRoom._id}:`, members)
+
+  const memberMappings = (
+    await Promise.all(
+      members
+        .filter((rcMemberId) => rcMemberId != creatorId)
+        .map(async (rcMemberId) => await getMapping(rcMemberId, 0))
+    )
+  )
+    .filter((mapping): mapping is IdMapping => mapping != null)
+    .map(async (mapping) => {
+      log.http(`Invite member ${mapping.rcId} aka. ${mapping.matrixId}`)
+      await axios.post(
+        `/_matrix/client/v3/rooms/${room.room_id}/invite`,
+        { user_id: mapping.matrixId },
+        sessionOptions
+      )
+
+      log.http(
+        `Accepting invitation for member ${mapping.rcId} aka. ${mapping.matrixId}`
+      )
+      await axios.post(
+        `/_matrix/client/v3/join/${room.room_id}`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${mapping.accessToken}`,
+          },
+        }
+      )
+    })
+
+  await Promise.all(memberMappings)
 
   return room
 }
