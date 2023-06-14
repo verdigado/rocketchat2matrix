@@ -77,7 +77,7 @@ Copy over `.env.example` to `.env` and insert your values.
 
 ## Cleaning Up
 
-To clean up the Synapse server and local storage database, run
+To clean up the Synapse server and local storage database, run either the convenience script `./reset.sh` or start with:
 
 ```shell
 docker-compose down
