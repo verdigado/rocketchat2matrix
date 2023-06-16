@@ -1,4 +1,5 @@
 process.env.REGISTRATION_SHARED_SECRET = 'ThisIsSoSecretWow'
+import { expect, jest, test } from '@jest/globals'
 import axios from 'axios'
 import {
   MatrixUser,
@@ -32,6 +33,7 @@ const nonce = 'test-nonce'
 test('mapping users', () => {
   expect(mapUser(rcUser)).toStrictEqual(matrixUser)
 })
+
 test('generating correct hmac', () => {
   expect(generateHmac({ ...matrixUser, nonce })).toStrictEqual(
     'be0537407ab3c82de908c5763185556e98a7211c'

@@ -5,7 +5,11 @@ import {
   getMapping,
   getMemberships,
 } from '../helpers/storage'
-import { axios, getUserSessionOptions } from '../helpers/synapse'
+import {
+  axios,
+  formatUserSessionOptions,
+  getUserSessionOptions,
+} from '../helpers/synapse'
 import { RcUser } from './users'
 
 export const enum RcRoomTypes {
@@ -47,7 +51,6 @@ export type MatrixRoom = {
   is_direct?: boolean
   preset?: MatrixRoomPresets
   visibility?: MatrixRoomVisibility
-  _creatorId?: string
 }
 
 export function mapRoom(rcRoom: RcRoom): MatrixRoom {
@@ -55,7 +58,6 @@ export function mapRoom(rcRoom: RcRoom): MatrixRoom {
     creation_content: {
       'm.federate': false,
     },
-    _creatorId: '',
   }
   rcRoom.name && (room.name = rcRoom.name)
   rcRoom.name && (room.room_alias_name = rcRoom.name)
@@ -65,18 +67,15 @@ export function mapRoom(rcRoom: RcRoom): MatrixRoom {
     case RcRoomTypes.direct:
       room.is_direct = true
       room.preset = MatrixRoomPresets.trusted
-      room._creatorId = rcRoom.uids?.[0] || ''
       break
 
     case RcRoomTypes.chat:
       room.preset = MatrixRoomPresets.public
       room.visibility = MatrixRoomVisibility.public
-      room._creatorId = rcRoom.u?._id || ''
       break
 
     case RcRoomTypes.private:
       room.preset = MatrixRoomPresets.private
-      room._creatorId = rcRoom.u?._id || ''
       break
 
     case RcRoomTypes.live:
@@ -85,15 +84,23 @@ export function mapRoom(rcRoom: RcRoom): MatrixRoom {
       log.error(message)
       throw new Error(message)
   }
-  if (!room._creatorId) {
-    log.warn(
-      `Creator ID could not be determined for room ${rcRoom.name} of type ${rcRoom.t}.`
-    )
-  }
   return room
 }
 
-export async function parseMemberships(rcRoom: RcRoom) {
+export function getCreator(rcRoom: RcRoom): string {
+  if (rcRoom.u && rcRoom.u._id) {
+    return rcRoom.u._id
+  } else if (rcRoom.uids && rcRoom.uids.length > 1) {
+    return rcRoom.uids[0]
+  } else {
+    log.warn(
+      `Creator ID could not be determined for room ${rcRoom.name} of type ${rcRoom.t}. This is normal for the default room.`
+    )
+    return ''
+  }
+}
+
+export async function parseMemberships(rcRoom: RcRoom): Promise<void> {
   if (rcRoom.t == RcRoomTypes.direct && rcRoom.uids) {
     await Promise.all(
       [...new Set(rcRoom.uids)] // Deduplicate users
@@ -105,62 +112,107 @@ export async function parseMemberships(rcRoom: RcRoom) {
   }
 }
 
-export async function createRoom(rcRoom: RcRoom): Promise<MatrixRoom> {
-  const room: MatrixRoom = mapRoom(rcRoom)
-  const creatorId = room._creatorId || ''
-  delete room._creatorId
-  await parseMemberships(rcRoom)
-  let sessionOptions = {}
-  if (room._creatorId) {
+export async function getCreatorSessionOptions(
+  creatorId: string
+): Promise<object> {
+  if (creatorId) {
     try {
-      sessionOptions = await getUserSessionOptions(creatorId)
-      log.debug('Room user session generated:', sessionOptions)
+      const creatorSessionOptions = await getUserSessionOptions(creatorId)
+      log.debug('Room owner session generated:', creatorSessionOptions)
+      return creatorSessionOptions
     } catch (error) {
       log.warn(error)
-      // TODO: Skip room, if it has 0-1 member or is a direct chat?
     }
   }
-  log.debug('Creating room:', room)
+  return {}
+}
 
-  room.room_id = (
-    await axios.post('/_matrix/client/v3/createRoom', room, sessionOptions)
+export async function registerRoom(
+  room: MatrixRoom,
+  creatorSessionOptions: object
+): Promise<string> {
+  return (
+    await axios.post(
+      '/_matrix/client/v3/createRoom',
+      room,
+      creatorSessionOptions
+    )
   ).data.room_id
+}
 
-  // TODO: Invite members and let them join
-  const members = await getMemberships(rcRoom._id)
-  log.info(`Inviting members to room ${rcRoom._id}:`, members)
+export async function inviteMember(
+  inviteeId: string,
+  roomId: string,
+  creatorSessionOptions: object
+): Promise<void> {
+  log.http(`Invite member ${inviteeId}`)
+  await axios.post(
+    `/_matrix/client/v3/rooms/${roomId}/invite`,
+    { user_id: inviteeId },
+    creatorSessionOptions
+  )
+}
 
+export async function acceptInvitation(
+  inviteeMapping: IdMapping,
+  roomId: string
+): Promise<void> {
+  log.http(
+    `Accepting invitation for member ${inviteeMapping.rcId} aka. ${inviteeMapping.matrixId}`
+  )
+  await axios.post(
+    `/_matrix/client/v3/join/${roomId}`,
+    {},
+    formatUserSessionOptions(inviteeMapping.accessToken || '')
+  )
+}
+
+export async function getFilteredMembers(
+  rcMemberIds: string[],
+  creatorId: string
+): Promise<IdMapping[]> {
   const memberMappings = (
     await Promise.all(
-      members
+      rcMemberIds
         .filter((rcMemberId) => rcMemberId != creatorId)
         .map(async (rcMemberId) => await getMapping(rcMemberId, 0))
     )
+  ).filter((memberMapping): memberMapping is IdMapping => memberMapping != null)
+  return memberMappings
+}
+
+export async function createRoom(rcRoom: RcRoom): Promise<MatrixRoom> {
+  const room: MatrixRoom = mapRoom(rcRoom)
+  const creatorId = getCreator(rcRoom)
+  await parseMemberships(rcRoom)
+  const creatorSessionOptions = await getCreatorSessionOptions(creatorId)
+  log.debug('Creating room:', room)
+
+  room.room_id = await registerRoom(room, creatorSessionOptions)
+
+  const rcMemberIds = await getMemberships(rcRoom._id)
+  const memberMappings = await getFilteredMembers(rcMemberIds, creatorId)
+  log.info(
+    `Inviting members to room ${rcRoom._id}:`,
+    memberMappings.map((mapping) => mapping.matrixId)
   )
-    .filter((mapping): mapping is IdMapping => mapping != null)
-    .map(async (mapping) => {
-      log.http(`Invite member ${mapping.rcId} aka. ${mapping.matrixId}`)
-      await axios.post(
-        `/_matrix/client/v3/rooms/${room.room_id}/invite`,
-        { user_id: mapping.matrixId },
-        sessionOptions
-      )
+  log.debug(
+    'Excluded members:',
+    rcMemberIds.filter(
+      (x) => !memberMappings.map((mapping) => mapping.rcId).includes(x)
+    )
+  )
 
-      log.http(
-        `Accepting invitation for member ${mapping.rcId} aka. ${mapping.matrixId}`
+  await Promise.all(
+    memberMappings.map(async (memberMapping) => {
+      await inviteMember(
+        memberMapping.matrixId || '',
+        room.room_id || '',
+        creatorSessionOptions
       )
-      await axios.post(
-        `/_matrix/client/v3/join/${room.room_id}`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${mapping.accessToken}`,
-          },
-        }
-      )
+      await acceptInvitation(memberMapping, room.room_id || '')
     })
-
-  await Promise.all(memberMappings)
+  )
 
   return room
 }
