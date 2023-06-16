@@ -22,10 +22,14 @@ export const whoami = () =>
       })
   })
 
+export function formatUserSessionOptions(accessToken: string) {
+  return { headers: { Authorization: `Bearer ${accessToken}` } }
+}
+
 export async function getUserSessionOptions(id: string) {
   const accessToken = await getAccessToken(id)
   if (!accessToken) {
     throw new Error(`Could not retrieve access token for ID ${id}`)
   }
-  return { headers: { Authorization: `Bearer ${accessToken}` } }
+  return formatUserSessionOptions(accessToken)
 }

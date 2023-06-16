@@ -28,7 +28,7 @@
   },
   "version": "0.1.0",
   "devDependencies": {
-    "@types/jest": "^29.5.2",
+    "@jest/globals": "^29.5.0",
     "@types/n-readlines": "^1.0.3",
     "@types/node": "^20.3.1",
     "@typescript-eslint/eslint-plugin": "^5.59.11",
