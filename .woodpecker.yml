@@ -40,7 +40,7 @@ pipeline:
     image: *node_image
     commands:
       - *create_synapse_access_token
-      - npm test
+      - npm test --ci
 
   node-compile:
     image: *node_image

@@ -7,6 +7,13 @@ axios.defaults.baseURL = 'http://localhost:8008'
 axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`
 axios.defaults.headers.post['Content-Type'] = 'application/json'
 
+export interface SessionOptions {
+  headers: {
+    Authorization: string
+  }
+  [others: string]: unknown
+}
+
 export { default as axios } from 'axios'
 export const whoami = () =>
   new Promise<void>((resolve, reject) => {
@@ -22,11 +29,13 @@ export const whoami = () =>
       })
   })
 
-export function formatUserSessionOptions(accessToken: string) {
+export function formatUserSessionOptions(accessToken: string): SessionOptions {
   return { headers: { Authorization: `Bearer ${accessToken}` } }
 }
 
-export async function getUserSessionOptions(id: string) {
+export async function getUserSessionOptions(
+  id: string
+): Promise<SessionOptions> {
   const accessToken = await getAccessToken(id)
   if (!accessToken) {
     throw new Error(`Could not retrieve access token for ID ${id}`)

@@ -2,6 +2,7 @@ import { expect, jest, test } from '@jest/globals'
 import axios from 'axios'
 import { IdMapping } from '../entity/IdMapping'
 import * as storage from '../helpers/storage'
+import { SessionOptions } from '../helpers/synapse'
 import {
   MatrixRoomPresets,
   MatrixRoomVisibility,
@@ -54,7 +55,7 @@ const rcPrivateRoom = {
   u: roomCreator,
 }
 
-const sessionOption = {
+const sessionOption: SessionOptions = {
   headers: { Authorization: 'Bearer secretAuthToken' },
   testingOption: 'there might be other options',
 }

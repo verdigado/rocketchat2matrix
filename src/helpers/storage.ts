@@ -10,26 +10,32 @@ const AppDataSource = new DataSource({
   logging: false,
 })
 
-export async function initStorage() {
+export async function initStorage(): Promise<void> {
   await AppDataSource.initialize()
 }
 
-export function getMapping(id: string, type: number) {
+export function getMapping(
+  id: string,
+  type: number
+): Promise<IdMapping | null> {
   return AppDataSource.manager.findOneBy(IdMapping, {
     rcId: id,
     type: type,
   })
 }
 
-export async function save(entity: IdMapping | Membership) {
+export async function save(entity: IdMapping | Membership): Promise<void> {
   await AppDataSource.manager.save(entity)
 }
 
-export async function getAccessToken(id: string) {
+export async function getAccessToken(id: string): Promise<string | undefined> {
   return (await getMapping(id, 0))?.accessToken
 }
 
-export async function createMembership(rcRoomId: string, rcUserId: string) {
+export async function createMembership(
+  rcRoomId: string,
+  rcUserId: string
+): Promise<void> {
   const membership = new Membership()
   membership.rcRoomId = rcRoomId
   membership.rcUserId = rcUserId
@@ -37,7 +43,7 @@ export async function createMembership(rcRoomId: string, rcUserId: string) {
   await save(membership)
 }
 
-export async function getMemberships(rcRoomId: string) {
+export async function getMemberships(rcRoomId: string): Promise<string[]> {
   return (
     await AppDataSource.manager.find(Membership, {
       select: {
