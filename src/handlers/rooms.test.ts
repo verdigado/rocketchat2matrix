@@ -2,6 +2,7 @@ import { expect, jest, test } from '@jest/globals'
 import axios from 'axios'
 import { IdMapping } from '../entity/IdMapping'
 import * as storage from '../helpers/storage'
+import { SessionOptions } from '../helpers/synapse'
 import {
   MatrixRoomPresets,
   MatrixRoomVisibility,
@@ -14,7 +15,6 @@ import {
   parseMemberships,
   registerRoom,
 } from './rooms'
-import { SessionOptions } from '../helpers/synapse'
 
 jest.mock('axios')
 const mockedAxios = axios as jest.Mocked<typeof axios>

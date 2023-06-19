@@ -1,5 +1,5 @@
+import { expect, jest, test } from '@jest/globals'
 import { getUserSessionOptions } from '../helpers/synapse'
-import { jest, expect, test } from '@jest/globals'
 import { getCreatorSessionOptions } from './rooms'
 
 jest.mock('../helpers/synapse')
