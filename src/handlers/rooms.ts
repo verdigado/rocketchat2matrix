@@ -6,6 +6,7 @@ import {
   getMemberships,
 } from '../helpers/storage'
 import {
+  SessionOptions,
   axios,
   formatUserSessionOptions,
   getUserSessionOptions,
@@ -114,7 +115,7 @@ export async function parseMemberships(rcRoom: RcRoom): Promise<void> {
 
 export async function getCreatorSessionOptions(
   creatorId: string
-): Promise<object> {
+): Promise<SessionOptions | object> {
   if (creatorId) {
     try {
       const creatorSessionOptions = await getUserSessionOptions(creatorId)
@@ -129,7 +130,7 @@ export async function getCreatorSessionOptions(
 
 export async function registerRoom(
   room: MatrixRoom,
-  creatorSessionOptions: object
+  creatorSessionOptions: SessionOptions | object
 ): Promise<string> {
   return (
     await axios.post(
@@ -143,7 +144,7 @@ export async function registerRoom(
 export async function inviteMember(
   inviteeId: string,
   roomId: string,
-  creatorSessionOptions: object
+  creatorSessionOptions: SessionOptions | object
 ): Promise<void> {
   log.http(`Invite member ${inviteeId}`)
   await axios.post(

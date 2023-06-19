@@ -14,6 +14,7 @@ import {
   parseMemberships,
   registerRoom,
 } from './rooms'
+import { SessionOptions } from '../helpers/synapse'
 
 jest.mock('axios')
 const mockedAxios = axios as jest.Mocked<typeof axios>
@@ -54,7 +55,7 @@ const rcPrivateRoom = {
   u: roomCreator,
 }
 
-const sessionOption = {
+const sessionOption: SessionOptions = {
   headers: { Authorization: 'Bearer secretAuthToken' },
   testingOption: 'there might be other options',
 }
