@@ -8,6 +8,8 @@ import log from './helpers/logger'
 import {
   createMembership,
   getMapping,
+  getRoomId,
+  getUserId,
   initStorage,
   save,
 } from './helpers/storage'
@@ -62,12 +64,12 @@ async function loadRcExport(entity: Entities) {
           break
         }
 
-        let mapping = await getMapping(rcUser._id, entities[entity].mappingType)
-        if (mapping && mapping.matrixId) {
-          log.debug('Mapping exists:', mapping)
+        const matrixUserId = await getUserId(rcUser._id)
+        if (matrixUserId) {
+          log.debug(`Mapping exists: ${rcUser._id} -> ${matrixUserId}`)
         } else {
           const matrixUser = await createUser(rcUser)
-          mapping = new IdMapping()
+          const mapping = new IdMapping()
           mapping.rcId = rcUser._id
           mapping.matrixId = matrixUser.user_id
           mapping.type = entities[entity].mappingType
@@ -91,15 +93,12 @@ async function loadRcExport(entity: Entities) {
         const rcRoom: RcRoom = item
         log.info(`Parsing room ${rcRoom.name || 'with ID: ' + rcRoom._id}`)
 
-        let roomMapping = await getMapping(
-          rcRoom._id,
-          entities[entity].mappingType
-        )
-        if (roomMapping && roomMapping.matrixId) {
-          log.debug('Mapping exists:', roomMapping)
+        const matrixRoomId = await getRoomId(rcRoom._id)
+        if (matrixRoomId) {
+          log.debug(`Mapping exists: ${rcRoom._id} -> ${matrixRoomId}`)
         } else {
           const matrixRoom = await createRoom(rcRoom)
-          roomMapping = new IdMapping()
+          const roomMapping = new IdMapping()
           roomMapping.rcId = rcRoom._id
           roomMapping.matrixId = matrixRoom.room_id
           roomMapping.type = entities[entity].mappingType

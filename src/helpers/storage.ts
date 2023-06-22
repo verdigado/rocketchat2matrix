@@ -55,3 +55,15 @@ export async function getMemberships(rcRoomId: string): Promise<string[]> {
     })
   ).map((entity) => entity.rcUserId)
 }
+
+export async function getUserId(rcId: string): Promise<string | undefined> {
+  return (await getMapping(rcId, 0))?.matrixId
+}
+
+export async function getRoomId(rcId: string): Promise<string | undefined> {
+  return (await getMapping(rcId, 1))?.matrixId
+}
+
+export async function getMessageId(rcId: string): Promise<string | undefined> {
+  return (await getMapping(rcId, 2))?.matrixId
+}
