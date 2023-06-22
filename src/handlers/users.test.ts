@@ -1,4 +1,5 @@
 process.env.REGISTRATION_SHARED_SECRET = 'ThisIsSoSecretWow'
+process.env.EXCLUDED_USERS = 'excludedUser1,excludedUser2'
 import { expect, jest, test } from '@jest/globals'
 import axios from 'axios'
 import * as storage from '../helpers/storage'
@@ -8,6 +9,7 @@ import {
   createUser,
   generateHmac,
   mapUser,
+  userIsExcluded,
 } from '../handlers/users'
 
 jest.mock('axios')
@@ -75,4 +77,22 @@ test('creating users', async () => {
     rcUser._id
   )
   expect(mockedStorage.createMembership).toHaveBeenCalledTimes(2)
+})
+
+test('users are excluded', () => {
+  expect(userIsExcluded(rcUser)).toBeFalsy()
+  expect(userIsExcluded({ ...rcUser, _id: 'excludedUser1' })).toBeTruthy()
+  expect(userIsExcluded({ ...rcUser, username: 'excludedUser2' })).toBeTruthy()
+  expect(userIsExcluded({ ...rcUser, roles: ['bot'] })).toBeTruthy()
+  expect(
+    userIsExcluded({ ...rcUser, roles: [...rcUser.__rooms, 'app'] })
+  ).toBeTruthy()
+  expect(
+    userIsExcluded({
+      ...rcUser,
+      _id: 'excludedUser2',
+      username: 'excludedUser1',
+      roles: [...rcUser.__rooms, 'app', 'bot'],
+    })
+  ).toBeTruthy()
 })

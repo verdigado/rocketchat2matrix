@@ -74,6 +74,23 @@ async function parseUserMemberships(rcUser: RcUser): Promise<void> {
   )
 }
 
+export function userIsExcluded(rcUser: RcUser): boolean {
+  const reasons: string[] = []
+  const excludedUsers = (process.env.EXCLUDED_USERS || '').split(',')
+  if (rcUser.roles.includes('app')) reasons.push('has role "app"')
+  if (rcUser.roles.includes('bot')) reasons.push('has role "bot"')
+  if (excludedUsers.includes(rcUser._id))
+    reasons.push(`id "${rcUser._id}" is on exclusion list`)
+  if (excludedUsers.includes(rcUser.username))
+    reasons.push(`username "${rcUser.username}" is on exclusion list`)
+
+  if (reasons.length > 0) {
+    log.debug(`User ${rcUser.name} is excluded: ${reasons.join(', ')}`)
+    return true
+  }
+  return false
+}
+
 export async function createUser(rcUser: RcUser): Promise<MatrixUser> {
   const user = mapUser(rcUser)
   const nonce = await getUserRegistrationNonce()

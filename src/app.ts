@@ -3,7 +3,7 @@ dotenv.config()
 import lineByLine from 'n-readlines'
 import 'reflect-metadata'
 import { IdMapping } from './entity/IdMapping'
-import { RcUser, createUser } from './handlers/users'
+import { RcUser, createUser, userIsExcluded } from './handlers/users'
 import log from './helpers/logger'
 import { getRoomId, getUserId, initStorage, save } from './helpers/storage'
 import { whoami } from './helpers/synapse'
@@ -48,12 +48,7 @@ async function loadRcExport(entity: Entities) {
         const rcUser: RcUser = item
         log.info(`Parsing user: ${rcUser.name}: ${rcUser._id}`)
 
-        // Check for exclusion
-        if (
-          rcUser.roles.some((e) => ['app', 'bot'].includes(e)) ||
-          (process.env.EXCLUDED_USERS || '').split(',').includes(rcUser._id)
-        ) {
-          log.debug('User excluded. Skipping.')
+        if (userIsExcluded(rcUser)) {
           break
         }
 

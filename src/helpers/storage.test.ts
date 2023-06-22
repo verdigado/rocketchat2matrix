@@ -28,7 +28,7 @@ beforeAll(async () => {
   await initStorage()
 })
 
-test('save mapping', async () => {
+test('create mapping', async () => {
   await expect(save(mapping)).resolves.toBe(undefined)
 })
 
