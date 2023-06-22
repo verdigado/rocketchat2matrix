@@ -76,15 +76,12 @@ async function parseUserMemberships(rcUser: RcUser): Promise<void> {
 
 export async function createUser(rcUser: RcUser): Promise<MatrixUser> {
   const user = mapUser(rcUser)
-  user.nonce = await getUserRegistrationNonce()
-  user.mac = generateHmac(user)
-  const accessToken = await registerUser(user)
+  const nonce = await getUserRegistrationNonce()
+  const mac = generateHmac({ ...user, nonce })
+  const accessToken = await registerUser({ ...user, nonce, mac })
   user.user_id = accessToken.user_id
   user.access_token = accessToken.access_token
   log.info(`User ${rcUser.username} created:`, user)
-
-  delete user.nonce
-  delete user.mac
 
   await parseUserMemberships(rcUser)
 

@@ -33,15 +33,14 @@ const matrixUser: MatrixUser = {
 }
 
 const nonce = 'test-nonce'
+const mac = 'be0537407ab3c82de908c5763185556e98a7211c'
 
 test('mapping users', () => {
   expect(mapUser(rcUser)).toStrictEqual(matrixUser)
 })
 
 test('generating correct hmac', () => {
-  expect(generateHmac({ ...matrixUser, nonce })).toStrictEqual(
-    'be0537407ab3c82de908c5763185556e98a7211c'
-  )
+  expect(generateHmac({ ...matrixUser, nonce })).toStrictEqual(mac)
 })
 
 test('creating users', async () => {
@@ -61,14 +60,11 @@ test('creating users', async () => {
   })
 
   expect(mockedAxios.get).toHaveBeenCalledWith('/_synapse/admin/v1/register')
-  expect(mockedAxios.post).toHaveBeenCalled()
-  // The following test fails with an incorrect return value, for whatever reason.
-  // Probably because of mutated call logs in jest due to the `delete` or sth.
-  // expect(mockedAxios.post).toHaveBeenCalledWith('/_synapse/admin/v1/register', {
-  //   ...matrixUser,
-  //   nonce,
-  //   mac: 'be0537407ab3c82de908c5763185556e98a7211c',
-  // })
+  expect(mockedAxios.post).toHaveBeenCalledWith('/_synapse/admin/v1/register', {
+    ...matrixUser,
+    nonce,
+    mac,
+  })
 
   expect(mockedStorage.createMembership).toHaveBeenCalledWith(
     rcUser.__rooms[0],
