@@ -1,6 +1,7 @@
 import { createHmac } from 'node:crypto'
 import log from '../helpers/logger'
 import { axios } from '../helpers/synapse'
+import { createMembership } from '../helpers/storage'
 
 export type RcUser = {
   _id: string
@@ -64,6 +65,15 @@ async function registerUser(user: MatrixUser): Promise<AccessToken> {
   return (await axios.post('/_synapse/admin/v1/register', user)).data
 }
 
+async function parseUserMemberships(rcUser: RcUser): Promise<void> {
+  await Promise.all(
+    rcUser.__rooms.map(async (rcRoomId: string) => {
+      await createMembership(rcRoomId, rcUser._id)
+      log.debug(`${rcUser.username} membership for ${rcRoomId} created`)
+    })
+  )
+}
+
 export async function createUser(rcUser: RcUser): Promise<MatrixUser> {
   const user = mapUser(rcUser)
   user.nonce = await getUserRegistrationNonce()
@@ -75,6 +85,8 @@ export async function createUser(rcUser: RcUser): Promise<MatrixUser> {
 
   delete user.nonce
   delete user.mac
+
+  await parseUserMemberships(rcUser)
 
   return user
 }

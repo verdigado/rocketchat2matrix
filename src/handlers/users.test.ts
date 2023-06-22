@@ -1,6 +1,7 @@
 process.env.REGISTRATION_SHARED_SECRET = 'ThisIsSoSecretWow'
 import { expect, jest, test } from '@jest/globals'
 import axios from 'axios'
+import * as storage from '../helpers/storage'
 import {
   MatrixUser,
   RcUser,
@@ -12,12 +13,15 @@ import {
 jest.mock('axios')
 const mockedAxios = axios as jest.Mocked<typeof axios>
 
+jest.mock('../helpers/storage')
+const mockedStorage = storage as jest.Mocked<typeof storage>
+
 const rcUser: RcUser = {
   _id: 'testRc',
   name: 'Tester McDelme',
   username: 'testuser',
   roles: ['user'],
-  __rooms: [],
+  __rooms: ['room0', 'room1'],
 }
 
 const matrixUser: MatrixUser = {
@@ -65,4 +69,14 @@ test('creating users', async () => {
   //   nonce,
   //   mac: 'be0537407ab3c82de908c5763185556e98a7211c',
   // })
+
+  expect(mockedStorage.createMembership).toHaveBeenCalledWith(
+    rcUser.__rooms[0],
+    rcUser._id
+  )
+  expect(mockedStorage.createMembership).toHaveBeenCalledWith(
+    rcUser.__rooms[1],
+    rcUser._id
+  )
+  expect(mockedStorage.createMembership).toHaveBeenCalledTimes(2)
 })

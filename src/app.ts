@@ -5,14 +5,7 @@ import 'reflect-metadata'
 import { IdMapping } from './entity/IdMapping'
 import { RcUser, createUser } from './handlers/users'
 import log from './helpers/logger'
-import {
-  createMembership,
-  getMapping,
-  getRoomId,
-  getUserId,
-  initStorage,
-  save,
-} from './helpers/storage'
+import { getRoomId, getUserId, initStorage, save } from './helpers/storage'
 import { whoami } from './helpers/synapse'
 import { RcRoom, createRoom } from './handlers/rooms'
 
@@ -77,14 +70,6 @@ async function loadRcExport(entity: Entities) {
 
           await save(mapping)
           log.debug('Mapping added:', mapping)
-
-          // Add user to room mapping (specific to users)
-          await Promise.all(
-            rcUser.__rooms.map(async (rcRoomId: string) => {
-              await createMembership(rcRoomId, rcUser._id)
-              log.debug(`${rcUser.username} membership for ${rcRoomId} created`)
-            })
-          )
         }
 
         break
