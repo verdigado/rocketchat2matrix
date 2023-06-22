@@ -4,7 +4,7 @@ import { Membership } from '../entity/Membership'
 
 const AppDataSource = new DataSource({
   type: 'sqlite',
-  database: 'db.sqlite',
+  database: process.env.DATABASE || 'db.sqlite',
   entities: [IdMapping, Membership],
   synchronize: true,
   logging: false,
