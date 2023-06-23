@@ -2,12 +2,11 @@ import dotenv from 'dotenv'
 dotenv.config()
 import lineByLine from 'n-readlines'
 import 'reflect-metadata'
-import { IdMapping } from './entity/IdMapping'
-import { RcUser, createUser, userIsExcluded } from './handlers/users'
+import { handle as handleRoom } from './handlers/rooms'
+import { handle as handleUser } from './handlers/users'
 import log from './helpers/logger'
-import { getRoomId, getUserId, initStorage, save } from './helpers/storage'
+import { initStorage } from './helpers/storage'
 import { whoami } from './helpers/synapse'
-import { RcRoom, createRoom } from './handlers/rooms'
 
 log.info('rocketchat2matrix starts.')
 
@@ -45,47 +44,11 @@ async function loadRcExport(entity: Entities) {
     const item = JSON.parse(line.toString())
     switch (entity) {
       case Entities.Users:
-        const rcUser: RcUser = item
-        log.info(`Parsing user: ${rcUser.name}: ${rcUser._id}`)
-
-        if (userIsExcluded(rcUser)) {
-          break
-        }
-
-        const matrixUserId = await getUserId(rcUser._id)
-        if (matrixUserId) {
-          log.debug(`Mapping exists: ${rcUser._id} -> ${matrixUserId}`)
-        } else {
-          const matrixUser = await createUser(rcUser)
-          const mapping = new IdMapping()
-          mapping.rcId = rcUser._id
-          mapping.matrixId = matrixUser.user_id
-          mapping.type = entities[entity].mappingType
-          mapping.accessToken = matrixUser.access_token
-
-          await save(mapping)
-          log.debug('Mapping added:', mapping)
-        }
-
+        await handleUser(item)
         break
 
       case Entities.Rooms:
-        const rcRoom: RcRoom = item
-        log.info(`Parsing room ${rcRoom.name || 'with ID: ' + rcRoom._id}`)
-
-        const matrixRoomId = await getRoomId(rcRoom._id)
-        if (matrixRoomId) {
-          log.debug(`Mapping exists: ${rcRoom._id} -> ${matrixRoomId}`)
-        } else {
-          const matrixRoom = await createRoom(rcRoom)
-          const roomMapping = new IdMapping()
-          roomMapping.rcId = rcRoom._id
-          roomMapping.matrixId = matrixRoom.room_id
-          roomMapping.type = entities[entity].mappingType
-
-          await save(roomMapping)
-          log.debug('Mapping added:', roomMapping)
-        }
+        await handleRoom(item)
         break
 
       case Entities.Messages:

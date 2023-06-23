@@ -6,11 +6,13 @@ import * as storage from '../helpers/storage'
 import {
   MatrixUser,
   RcUser,
+  createMapping,
   createUser,
   generateHmac,
   mapUser,
   userIsExcluded,
 } from '../handlers/users'
+import { IdMapping } from '../entity/IdMapping'
 
 jest.mock('axios')
 const mockedAxios = axios as jest.Mocked<typeof axios>
@@ -95,4 +97,14 @@ test('users are excluded', () => {
       roles: [...rcUser.__rooms, 'app', 'bot'],
     })
   ).toBeTruthy()
+})
+
+test('creating mapping', async () => {
+  await expect(createMapping(rcUser._id, matrixUser)).resolves.toBe(undefined)
+  expect(mockedStorage.save).toHaveBeenCalledWith({
+    rcId: rcUser._id,
+    matrixId: matrixUser.user_id,
+    type: 0,
+    accessToken: matrixUser.access_token,
+  } as IdMapping)
 })

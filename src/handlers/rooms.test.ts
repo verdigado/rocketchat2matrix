@@ -6,13 +6,15 @@ import { SessionOptions } from '../helpers/synapse'
 import {
   MatrixRoomPresets,
   MatrixRoomVisibility,
+  RcRoom,
   RcRoomTypes,
   acceptInvitation,
+  createMapping,
   getCreator,
   getFilteredMembers,
   inviteMember,
   mapRoom,
-  parseMemberships,
+  createDirectChatMemberships,
   registerRoom,
 } from './rooms'
 
@@ -110,10 +112,13 @@ test('getting creator', () => {
   expect(getCreator(rcDirectChat)).toBe('aliceid')
   expect(getCreator(rcPublicRoom)).toBe(roomCreator._id)
   expect(getCreator(rcPrivateRoom)).toBe(roomCreator._id)
+  expect(getCreator({} as RcRoom)).toBe('')
 })
 
 test('creating memberships for direct chats', async () => {
-  await expect(parseMemberships(rcDirectChat)).resolves.toBe(undefined)
+  await expect(createDirectChatMemberships(rcDirectChat)).resolves.toBe(
+    undefined
+  )
   expect(mockedStorage.createMembership).toHaveBeenCalledWith(
     rcDirectChat._id,
     rcDirectChat.uids[0]
@@ -127,7 +132,11 @@ test('creating memberships for direct chats', async () => {
   mockedStorage.createMembership.mockClear()
 
   await expect(
-    parseMemberships({ ...rcDirectChat, _id: 'hoihoi', uids: ['hoi', 'hoi'] })
+    createDirectChatMemberships({
+      ...rcDirectChat,
+      _id: 'hoihoi',
+      uids: ['hoi', 'hoi'],
+    })
   ).resolves.toBe(undefined)
 
   expect(mockedStorage.createMembership).toHaveBeenCalledWith('hoihoi', 'hoi')
@@ -209,4 +218,16 @@ test('filtering members', async () => {
   expect(mockedStorage.getMapping).toBeCalledWith('existingUser', 0)
   expect(mockedStorage.getMapping).toBeCalledWith('otherExistingUser', 0)
   expect(mockedStorage.getMapping).toBeCalledWith('excludedUser', 0)
+})
+
+test('creating mapping', async () => {
+  await expect(
+    createMapping(rcPublicRoom._id, { ...mapRoom(rcPublicRoom), room_id })
+  ).resolves.toBe(undefined)
+  expect(mockedStorage.save).toHaveBeenCalledWith({
+    rcId: rcPublicRoom._id,
+    matrixId: room_id,
+    type: 1,
+    accessToken: undefined,
+  } as IdMapping)
 })

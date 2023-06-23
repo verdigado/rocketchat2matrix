@@ -1,7 +1,8 @@
 import { createHmac } from 'node:crypto'
 import log from '../helpers/logger'
 import { axios } from '../helpers/synapse'
-import { createMembership } from '../helpers/storage'
+import { createMembership, getUserId, save } from '../helpers/storage'
+import { IdMapping } from '../entity/IdMapping'
 
 export type RcUser = {
   _id: string
@@ -91,6 +92,20 @@ export function userIsExcluded(rcUser: RcUser): boolean {
   return false
 }
 
+export async function createMapping(
+  rcId: string,
+  matrixUser: MatrixUser
+): Promise<void> {
+  const mapping = new IdMapping()
+  mapping.rcId = rcId
+  mapping.matrixId = matrixUser.user_id
+  mapping.type = 0
+  mapping.accessToken = matrixUser.access_token
+
+  await save(mapping)
+  log.debug('Mapping added:', mapping)
+}
+
 export async function createUser(rcUser: RcUser): Promise<MatrixUser> {
   const user = mapUser(rcUser)
   const nonce = await getUserRegistrationNonce()
@@ -103,4 +118,20 @@ export async function createUser(rcUser: RcUser): Promise<MatrixUser> {
   await parseUserMemberships(rcUser)
 
   return user
+}
+
+export async function handle(rcUser: RcUser): Promise<void> {
+  log.info(`Parsing user: ${rcUser.name}: ${rcUser._id}`)
+
+  if (userIsExcluded(rcUser)) {
+    return undefined
+  }
+
+  const matrixId = await getUserId(rcUser._id)
+  if (matrixId) {
+    log.debug(`Mapping exists: ${rcUser._id} -> ${matrixId}`)
+  } else {
+    const matrixUser = await createUser(rcUser)
+    await createMapping(rcUser._id, matrixUser)
+  }
 }
