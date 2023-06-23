@@ -13,6 +13,7 @@ import {
   userIsExcluded,
 } from '../handlers/users'
 import { IdMapping } from '../entity/IdMapping'
+import { Entity, entities } from '../Entities'
 
 jest.mock('axios')
 const mockedAxios = axios as jest.Mocked<typeof axios>
@@ -104,7 +105,7 @@ test('creating mapping', async () => {
   expect(mockedStorage.save).toHaveBeenCalledWith({
     rcId: rcUser._id,
     matrixId: matrixUser.user_id,
-    type: 0,
+    type: entities[Entity.Users].mappingType,
     accessToken: matrixUser.access_token,
   } as IdMapping)
 })

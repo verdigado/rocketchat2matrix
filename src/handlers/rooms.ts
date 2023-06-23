@@ -1,3 +1,4 @@
+import { Entity, entities } from '../Entities'
 import { IdMapping } from '../entity/IdMapping'
 import log from '../helpers/logger'
 import {
@@ -193,7 +194,7 @@ export async function createMapping(
   const roomMapping = new IdMapping()
   roomMapping.rcId = rcId
   roomMapping.matrixId = matrixRoom.room_id
-  roomMapping.type = 1
+  roomMapping.type = entities[Entity.Rooms].mappingType
 
   await save(roomMapping)
   log.debug('Mapping added:', roomMapping)

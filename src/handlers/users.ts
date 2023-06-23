@@ -3,6 +3,7 @@ import log from '../helpers/logger'
 import { axios } from '../helpers/synapse'
 import { createMembership, getUserId, save } from '../helpers/storage'
 import { IdMapping } from '../entity/IdMapping'
+import { Entity, entities } from '../Entities'
 
 export type RcUser = {
   _id: string
@@ -99,7 +100,7 @@ export async function createMapping(
   const mapping = new IdMapping()
   mapping.rcId = rcId
   mapping.matrixId = matrixUser.user_id
-  mapping.type = 0
+  mapping.type = entities[Entity.Users].mappingType
   mapping.accessToken = matrixUser.access_token
 
   await save(mapping)

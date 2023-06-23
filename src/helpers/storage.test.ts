@@ -13,11 +13,12 @@ import {
 } from './storage'
 import { IdMapping } from '../entity/IdMapping'
 import { Membership } from '../entity/Membership'
+import { Entity, entities } from '../Entities'
 
 const mapping = new IdMapping()
 mapping.rcId = 'rcId'
 mapping.matrixId = 'matrixId'
-mapping.type = 0
+mapping.type = entities[Entity.Users].mappingType
 mapping.accessToken = 'accessToken'
 
 const membership = new Membership()
@@ -73,7 +74,7 @@ test('get room by id', async () => {
   const room = new IdMapping()
   room.rcId = 'rcRoom'
   room.matrixId = 'matrixRoom'
-  room.type = 1
+  room.type = entities[Entity.Rooms].mappingType
   await save(room)
 
   await expect(getRoomId(room.rcId)).resolves.toBe(room.matrixId)
@@ -84,7 +85,7 @@ test('get message by id', async () => {
   const message = new IdMapping()
   message.rcId = 'rcMessage'
   message.matrixId = 'matrixMessage'
-  message.type = 2
+  message.type = entities[Entity.Messages].mappingType
   await save(message)
 
   await expect(getMessageId(message.rcId)).resolves.toBe(message.matrixId)

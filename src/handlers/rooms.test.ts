@@ -17,6 +17,7 @@ import {
   createDirectChatMemberships,
   registerRoom,
 } from './rooms'
+import { Entity, entities } from '../Entities'
 
 jest.mock('axios')
 const mockedAxios = axios as jest.Mocked<typeof axios>
@@ -177,7 +178,7 @@ test('accepting invitation by joining the room', async () => {
         rcId: 'whatever',
         matrixId: 'Neo',
         accessToken: 'secretAuthToken',
-        type: 0,
+        type: entities[Entity.Users].mappingType,
       },
       room_id
     )
@@ -202,7 +203,7 @@ test('filtering members', async () => {
     return {
       rcId,
       matrixId: `@${rcId}:matrix`,
-      type: type || 0,
+      type: type || entities[Entity.Users].mappingType,
       accessToken: 'accessToken',
     }
   }
@@ -215,9 +216,18 @@ test('filtering members', async () => {
     mockMapping('existingUser'),
     mockMapping('otherExistingUser'),
   ])
-  expect(mockedStorage.getMapping).toBeCalledWith('existingUser', 0)
-  expect(mockedStorage.getMapping).toBeCalledWith('otherExistingUser', 0)
-  expect(mockedStorage.getMapping).toBeCalledWith('excludedUser', 0)
+  expect(mockedStorage.getMapping).toBeCalledWith(
+    'existingUser',
+    entities[Entity.Users].mappingType
+  )
+  expect(mockedStorage.getMapping).toBeCalledWith(
+    'otherExistingUser',
+    entities[Entity.Users].mappingType
+  )
+  expect(mockedStorage.getMapping).toBeCalledWith(
+    'excludedUser',
+    entities[Entity.Users].mappingType
+  )
 })
 
 test('creating mapping', async () => {
@@ -227,7 +237,7 @@ test('creating mapping', async () => {
   expect(mockedStorage.save).toHaveBeenCalledWith({
     rcId: rcPublicRoom._id,
     matrixId: room_id,
-    type: 1,
+    type: entities[Entity.Rooms].mappingType,
     accessToken: undefined,
   } as IdMapping)
 })

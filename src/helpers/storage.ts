@@ -1,6 +1,7 @@
 import { DataSource } from 'typeorm'
 import { IdMapping } from '../entity/IdMapping'
 import { Membership } from '../entity/Membership'
+import { Entity, entities } from '../Entities'
 
 const AppDataSource = new DataSource({
   type: 'sqlite',
@@ -29,7 +30,7 @@ export async function save(entity: IdMapping | Membership): Promise<void> {
 }
 
 export async function getAccessToken(id: string): Promise<string | undefined> {
-  return (await getMapping(id, 0))?.accessToken
+  return (await getMapping(id, entities[Entity.Users].mappingType))?.accessToken
 }
 
 export async function createMembership(
@@ -57,13 +58,14 @@ export async function getMemberships(rcRoomId: string): Promise<string[]> {
 }
 
 export async function getUserId(rcId: string): Promise<string | undefined> {
-  return (await getMapping(rcId, 0))?.matrixId
+  return (await getMapping(rcId, entities[Entity.Users].mappingType))?.matrixId
 }
 
 export async function getRoomId(rcId: string): Promise<string | undefined> {
-  return (await getMapping(rcId, 1))?.matrixId
+  return (await getMapping(rcId, entities[Entity.Rooms].mappingType))?.matrixId
 }
 
 export async function getMessageId(rcId: string): Promise<string | undefined> {
-  return (await getMapping(rcId, 2))?.matrixId
+  return (await getMapping(rcId, entities[Entity.Messages].mappingType))
+    ?.matrixId
 }
