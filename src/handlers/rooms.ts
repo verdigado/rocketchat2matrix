@@ -1,9 +1,12 @@
+import { Entity, entities } from '../Entities'
 import { IdMapping } from '../entity/IdMapping'
 import log from '../helpers/logger'
 import {
   createMembership,
   getMapping,
   getMemberships,
+  getRoomId,
+  save,
 } from '../helpers/storage'
 import {
   SessionOptions,
@@ -101,7 +104,9 @@ export function getCreator(rcRoom: RcRoom): string {
   }
 }
 
-export async function parseMemberships(rcRoom: RcRoom): Promise<void> {
+export async function createDirectChatMemberships(
+  rcRoom: RcRoom
+): Promise<void> {
   if (rcRoom.t == RcRoomTypes.direct && rcRoom.uids) {
     await Promise.all(
       [...new Set(rcRoom.uids)] // Deduplicate users
@@ -182,19 +187,45 @@ export async function getFilteredMembers(
   return memberMappings
 }
 
+export async function createMapping(
+  rcId: string,
+  matrixRoom: MatrixRoom
+): Promise<void> {
+  const roomMapping = new IdMapping()
+  roomMapping.rcId = rcId
+  roomMapping.matrixId = matrixRoom.room_id
+  roomMapping.type = entities[Entity.Rooms].mappingType
+
+  await save(roomMapping)
+  log.debug('Mapping added:', roomMapping)
+}
+
 export async function createRoom(rcRoom: RcRoom): Promise<MatrixRoom> {
   const room: MatrixRoom = mapRoom(rcRoom)
   const creatorId = getCreator(rcRoom)
-  await parseMemberships(rcRoom)
+  await createDirectChatMemberships(rcRoom)
   const creatorSessionOptions = await getCreatorSessionOptions(creatorId)
   log.debug('Creating room:', room)
 
   room.room_id = await registerRoom(room, creatorSessionOptions)
 
-  const rcMemberIds = await getMemberships(rcRoom._id)
+  await handleMemberships(rcRoom._id, room, creatorId, creatorSessionOptions)
+
+  return room
+}
+
+async function handleMemberships(
+  rcRoomId: string,
+  room: MatrixRoom,
+  creatorId: string,
+  creatorSessionOptions: object | SessionOptions
+) {
+  const rcMemberIds = await getMemberships(rcRoomId)
   const memberMappings = await getFilteredMembers(rcMemberIds, creatorId)
   log.info(
-    `Inviting members to room ${rcRoom._id}:`,
+    `Inviting members to room ${
+      room.room_alias_name || room.name || room.room_id
+    }:`,
     memberMappings.map((mapping) => mapping.matrixId)
   )
   log.debug(
@@ -214,6 +245,16 @@ export async function createRoom(rcRoom: RcRoom): Promise<MatrixRoom> {
       await acceptInvitation(memberMapping, room.room_id || '')
     })
   )
+}
 
-  return room
+export async function handle(rcRoom: RcRoom): Promise<void> {
+  log.info(`Parsing room ${rcRoom.name || 'with ID: ' + rcRoom._id}`)
+
+  const matrixRoomId = await getRoomId(rcRoom._id)
+  if (matrixRoomId) {
+    log.debug(`Mapping exists: ${rcRoom._id} -> ${matrixRoomId}`)
+  } else {
+    const matrixRoom = await createRoom(rcRoom)
+    await createMapping(rcRoom._id, matrixRoom)
+  }
 }

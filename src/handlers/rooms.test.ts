@@ -6,15 +6,18 @@ import { SessionOptions } from '../helpers/synapse'
 import {
   MatrixRoomPresets,
   MatrixRoomVisibility,
+  RcRoom,
   RcRoomTypes,
   acceptInvitation,
+  createMapping,
   getCreator,
   getFilteredMembers,
   inviteMember,
   mapRoom,
-  parseMemberships,
+  createDirectChatMemberships,
   registerRoom,
 } from './rooms'
+import { Entity, entities } from '../Entities'
 
 jest.mock('axios')
 const mockedAxios = axios as jest.Mocked<typeof axios>
@@ -110,10 +113,13 @@ test('getting creator', () => {
   expect(getCreator(rcDirectChat)).toBe('aliceid')
   expect(getCreator(rcPublicRoom)).toBe(roomCreator._id)
   expect(getCreator(rcPrivateRoom)).toBe(roomCreator._id)
+  expect(getCreator({} as RcRoom)).toBe('')
 })
 
 test('creating memberships for direct chats', async () => {
-  await expect(parseMemberships(rcDirectChat)).resolves.toBe(undefined)
+  await expect(createDirectChatMemberships(rcDirectChat)).resolves.toBe(
+    undefined
+  )
   expect(mockedStorage.createMembership).toHaveBeenCalledWith(
     rcDirectChat._id,
     rcDirectChat.uids[0]
@@ -127,7 +133,11 @@ test('creating memberships for direct chats', async () => {
   mockedStorage.createMembership.mockClear()
 
   await expect(
-    parseMemberships({ ...rcDirectChat, _id: 'hoihoi', uids: ['hoi', 'hoi'] })
+    createDirectChatMemberships({
+      ...rcDirectChat,
+      _id: 'hoihoi',
+      uids: ['hoi', 'hoi'],
+    })
   ).resolves.toBe(undefined)
 
   expect(mockedStorage.createMembership).toHaveBeenCalledWith('hoihoi', 'hoi')
@@ -168,7 +178,7 @@ test('accepting invitation by joining the room', async () => {
         rcId: 'whatever',
         matrixId: 'Neo',
         accessToken: 'secretAuthToken',
-        type: 0,
+        type: entities[Entity.Users].mappingType,
       },
       room_id
     )
@@ -193,7 +203,7 @@ test('filtering members', async () => {
     return {
       rcId,
       matrixId: `@${rcId}:matrix`,
-      type: type || 0,
+      type: type || entities[Entity.Users].mappingType,
       accessToken: 'accessToken',
     }
   }
@@ -206,7 +216,28 @@ test('filtering members', async () => {
     mockMapping('existingUser'),
     mockMapping('otherExistingUser'),
   ])
-  expect(mockedStorage.getMapping).toBeCalledWith('existingUser', 0)
-  expect(mockedStorage.getMapping).toBeCalledWith('otherExistingUser', 0)
-  expect(mockedStorage.getMapping).toBeCalledWith('excludedUser', 0)
+  expect(mockedStorage.getMapping).toBeCalledWith(
+    'existingUser',
+    entities[Entity.Users].mappingType
+  )
+  expect(mockedStorage.getMapping).toBeCalledWith(
+    'otherExistingUser',
+    entities[Entity.Users].mappingType
+  )
+  expect(mockedStorage.getMapping).toBeCalledWith(
+    'excludedUser',
+    entities[Entity.Users].mappingType
+  )
+})
+
+test('creating mapping', async () => {
+  await expect(
+    createMapping(rcPublicRoom._id, { ...mapRoom(rcPublicRoom), room_id })
+  ).resolves.toBe(undefined)
+  expect(mockedStorage.save).toHaveBeenCalledWith({
+    rcId: rcPublicRoom._id,
+    matrixId: room_id,
+    type: entities[Entity.Rooms].mappingType,
+    accessToken: undefined,
+  } as IdMapping)
 })

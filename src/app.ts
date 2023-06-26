@@ -2,114 +2,31 @@ import dotenv from 'dotenv'
 dotenv.config()
 import lineByLine from 'n-readlines'
 import 'reflect-metadata'
-import { IdMapping } from './entity/IdMapping'
-import { RcUser, createUser } from './handlers/users'
+import { handle as handleRoom } from './handlers/rooms'
+import { handle as handleUser } from './handlers/users'
 import log from './helpers/logger'
-import {
-  createMembership,
-  getMapping,
-  initStorage,
-  save,
-} from './helpers/storage'
+import { initStorage } from './helpers/storage'
 import { whoami } from './helpers/synapse'
-import { RcRoom, createRoom } from './handlers/rooms'
+import { Entity, entities } from './Entities'
 
 log.info('rocketchat2matrix starts.')
 
-const enum Entities {
-  Users = 'users',
-  Rooms = 'rooms',
-  Messages = 'messages',
-}
-
-type EntityConfig = {
-  filename: string
-  mappingType: number
-}
-
-const entities: { [key in Entities]: EntityConfig } = {
-  users: {
-    filename: 'users.json',
-    mappingType: 0,
-  },
-  rooms: {
-    filename: 'rocketchat_room.json',
-    mappingType: 1,
-  },
-  messages: {
-    filename: 'rocketchat_message.json',
-    mappingType: 2,
-  },
-}
-
-async function loadRcExport(entity: Entities) {
+async function loadRcExport(entity: Entity) {
   const rl = new lineByLine(`./inputs/${entities[entity].filename}`)
 
   let line: false | Buffer
   while ((line = rl.next())) {
     const item = JSON.parse(line.toString())
     switch (entity) {
-      case Entities.Users:
-        const rcUser: RcUser = item
-        log.info(`Parsing user: ${rcUser.name}: ${rcUser._id}`)
-
-        // Check for exclusion
-        if (
-          rcUser.roles.some((e) => ['app', 'bot'].includes(e)) ||
-          (process.env.EXCLUDED_USERS || '').split(',').includes(rcUser._id)
-        ) {
-          log.debug('User excluded. Skipping.')
-          break
-        }
-
-        let mapping = await getMapping(rcUser._id, entities[entity].mappingType)
-        if (mapping && mapping.matrixId) {
-          log.debug('Mapping exists:', mapping)
-        } else {
-          const matrixUser = await createUser(rcUser)
-          mapping = new IdMapping()
-          mapping.rcId = rcUser._id
-          mapping.matrixId = matrixUser.user_id
-          mapping.type = entities[entity].mappingType
-          mapping.accessToken = matrixUser.access_token
-
-          await save(mapping)
-          log.debug('Mapping added:', mapping)
-
-          // Add user to room mapping (specific to users)
-          await Promise.all(
-            rcUser.__rooms.map(async (rcRoomId: string) => {
-              await createMembership(rcRoomId, rcUser._id)
-              log.debug(`${rcUser.username} membership for ${rcRoomId} created`)
-            })
-          )
-        }
-
+      case Entity.Users:
+        await handleUser(item)
         break
 
-      case Entities.Rooms:
-        const rcRoom: RcRoom = item
-        log.info(`Parsing room ${rcRoom.name || 'with ID: ' + rcRoom._id}`)
-
-        let roomMapping = await getMapping(
-          rcRoom._id,
-          entities[entity].mappingType
-        )
-        if (roomMapping && roomMapping.matrixId) {
-          log.debug('Mapping exists:', roomMapping)
-        } else {
-          const matrixRoom = await createRoom(rcRoom)
-          roomMapping = new IdMapping()
-          roomMapping.rcId = rcRoom._id
-          roomMapping.matrixId = matrixRoom.room_id
-          roomMapping.type = entities[entity].mappingType
-
-          await save(roomMapping)
-          log.debug('Mapping added:', roomMapping)
-        }
+      case Entity.Rooms:
+        await handleRoom(item)
         break
 
-      case Entities.Messages:
+      case Entity.Messages:
         log.debug(`Message: ${item.name}`)
         break
 
@@ -124,9 +41,9 @@ async function main() {
     await whoami()
     await initStorage()
     log.info('Parsing users')
-    await loadRcExport(Entities.Users)
+    await loadRcExport(Entity.Users)
     log.info('Parsing rooms')
-    await loadRcExport(Entities.Rooms)
+    await loadRcExport(Entity.Rooms)
     log.info('Done.')
   } catch (error) {
     log.error(`Encountered an error while booting up: ${error}`, error)
