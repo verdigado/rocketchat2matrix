@@ -14,13 +14,15 @@ mongoexport --collection=users --db=rocketchat --out=users.json
 
 Export them to `inputs/`
 
-## Running the Matrix Dev Server
+## Configuring the Matrix Dev Server
+
+Generate a Synapse homeserver config with the following command (you might change `my.matrix.host` for the actual server name, as it can't be changed afterwards):
 
 ```shell
 docker-compose run --rm -e SYNAPSE_SERVER_NAME=my.matrix.host -e SYNAPSE_REPORT_STATS=no synapse generate
 ```
 
-To run the script without hitting rate limiting, you SHOULD add the following options to the freshly generated `files/homeserver.yaml`. **Do not leave these in the production setup!**
+To run the script without hitting rate limiting and activating an *Application Service* to send messages by different users with our desired timestamps, you MUST add the following options to the freshly generated `files/homeserver.yaml`. **Do not leave these in the production setup!**
 
 ```yaml
 rc_joins:
@@ -43,9 +45,17 @@ rc_invites:
   per_issuer:
     per_second: 1024
     burst_count: 2048
+app_service_config_files:
+  - /data/app-service.yaml
 ```
 
-Continue setting up the server:
+Now edit `app-service.example.yaml` and save it at `files/app-service.yaml`, changing the tokens.
+
+Copy over `.env.example` to `.env` and insert your values.
+
+## Starting the Matrix Dev Server
+
+Boot up the container and (for the first time starting the server or after resetting it manually) create an admin user:
 
 ```shell
 docker-compose up -d
@@ -65,11 +75,11 @@ curl --request POST \
 > src/config/synapse_access_token.json
 ```
 
+## Installing and Running the Script
+
+Install NodeJS and npm on your system, install the script's dependencies via `npm install`.
+
 To finally run the script, execute it via `npm start`.
-
-## Configuration
-
-Copy over `.env.example` to `.env` and insert your values.
 
 ## Running Tests
 
@@ -85,7 +95,7 @@ sudo rm files/homeserver.db
 rm db.sqlite
 ```
 
-Then you can restart with an empty but quite equal server, following the instructions above, excluding the `generate` command.
+Then you can restart with an empty but quite equal server, following the instructions above to start the dev server.
 
 ## Design Decisions
 
