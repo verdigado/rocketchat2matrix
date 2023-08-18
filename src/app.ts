@@ -4,6 +4,7 @@ import lineByLine from 'n-readlines'
 import 'reflect-metadata'
 import { handle as handleRoom } from './handlers/rooms'
 import { handle as handleUser } from './handlers/users'
+import { handle as handleMessage } from './handlers/messages'
 import log from './helpers/logger'
 import { initStorage } from './helpers/storage'
 import { whoami } from './helpers/synapse'
@@ -27,7 +28,7 @@ async function loadRcExport(entity: Entity) {
         break
 
       case Entity.Messages:
-        log.debug(`Message: ${item.name}`)
+        await handleMessage(item)
         break
 
       default:
@@ -44,6 +45,8 @@ async function main() {
     await loadRcExport(Entity.Users)
     log.info('Parsing rooms')
     await loadRcExport(Entity.Rooms)
+    log.info('Parsing messages')
+    await loadRcExport(Entity.Messages)
     log.info('Done.')
   } catch (error) {
     log.error(`Encountered an error while booting up: ${error}`, error)
