@@ -9,6 +9,7 @@ import log from './helpers/logger'
 import { initStorage } from './helpers/storage'
 import { whoami } from './helpers/synapse'
 import { Entity, entities } from './Entities'
+import { AxiosError } from 'axios'
 
 log.info('rocketchat2matrix starts.')
 
@@ -49,7 +50,13 @@ async function main() {
     await loadRcExport(Entity.Messages)
     log.info('Done.')
   } catch (error) {
-    log.error(`Encountered an error while booting up: ${error}`, error)
+    if (error instanceof AxiosError) {
+      log.error(`Error during request: ${error.message}`)
+      log.error(`Request: ${error.request?.method} ${error.request?.path}`)
+      log.error(`Response: ${error.response?.status}`, error.response?.data)
+    } else {
+      log.error(`Encountered an error while booting up: ${error}`, error)
+    }
   }
 }
 

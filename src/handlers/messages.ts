@@ -13,6 +13,7 @@ if (!applicationServiceToken) {
 
 export type RcMessage = {
   _id: string
+  t?: string // Event type
   rid: string // The unique id for the room
   msg: string // The content of the message.
   tmid?: string
@@ -84,9 +85,14 @@ export async function createMessage(
 }
 
 export async function handle(rcMessage: RcMessage): Promise<void> {
+  if (rcMessage.t) {
+    log.warn(`Message ${rcMessage._id} is of type ${rcMessage.t}, skipping.`)
+    return
+  }
+
   const room_id = (await getRoomId(rcMessage.rid)) || ''
   if (!room_id) {
-    log.info(
+    log.warn(
       `Could not find room ${rcMessage.rid} for message ${rcMessage._id}, skipping.`
     )
     return
@@ -94,7 +100,7 @@ export async function handle(rcMessage: RcMessage): Promise<void> {
 
   const user_id = (await getUserId(rcMessage.u._id)) || ''
   if (!user_id) {
-    log.info(
+    log.warn(
       `Could not find author ${rcMessage.u.username} for message ${rcMessage._id}, skipping.`
     )
     return
