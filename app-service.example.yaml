@@ -1,0 +1,9 @@
+id: "rc2matrix migration"
+url: "http://127.0.0.1:1234"
+as_token: "30c05ae90a248a4188e620216fa72e349803310ec83e2a77b34fe90be6081f46" # Change me to something different and random
+hs_token: "312df522183efd404ec1cd22d2ffa4bbc76a8c1ccf541dd692eef281356bb74e" # Change me to something different and random
+sender_localpart: "_rc_migration_bot"
+namespaces:
+   users:
+    - exclusive: false
+      regex: "@.*"
