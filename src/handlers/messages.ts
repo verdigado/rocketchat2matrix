@@ -85,12 +85,20 @@ export async function createMessage(
 }
 
 export async function handle(rcMessage: RcMessage): Promise<void> {
+  log.info(`Parsing message with ID: ${rcMessage._id}`)
+
+  const matrixId = await getMessageId(rcMessage._id)
+  if (matrixId) {
+    log.debug(`Mapping exists: ${rcMessage._id} -> ${matrixId}`)
+    return
+  }
+
   if (rcMessage.t) {
     log.warn(`Message ${rcMessage._id} is of type ${rcMessage.t}, skipping.`)
     return
   }
 
-  const room_id = (await getRoomId(rcMessage.rid)) || ''
+  const room_id = await getRoomId(rcMessage.rid)
   if (!room_id) {
     log.warn(
       `Could not find room ${rcMessage.rid} for message ${rcMessage._id}, skipping.`
@@ -98,7 +106,7 @@ export async function handle(rcMessage: RcMessage): Promise<void> {
     return
   }
 
-  const user_id = (await getUserId(rcMessage.u._id)) || ''
+  const user_id = await getUserId(rcMessage.u._id)
   if (!user_id) {
     log.warn(
       `Could not find author ${rcMessage.u.username} for message ${rcMessage._id}, skipping.`
@@ -110,14 +118,19 @@ export async function handle(rcMessage: RcMessage): Promise<void> {
 
   const ts = new Date(rcMessage.ts.$date).valueOf()
   if (rcMessage.tmid) {
-    const event_id = (await getMessageId(rcMessage.tmid)) || ''
-    matrixMessage['m.relates_to'] = {
-      rel_type: 'm.thread',
-      event_id,
-      is_falling_back: true,
-      'm.in_reply_to': {
+    const event_id = await getMessageId(rcMessage.tmid)
+    if (!event_id) {
+      log.warn(`Related message ${rcMessage.tmid} missing, skipping.`)
+      return
+    } else {
+      matrixMessage['m.relates_to'] = {
+        rel_type: 'm.thread',
         event_id,
-      },
+        is_falling_back: true,
+        'm.in_reply_to': {
+          event_id,
+        },
+      }
     }
   }
 

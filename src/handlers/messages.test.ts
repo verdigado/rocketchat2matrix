@@ -58,7 +58,8 @@ test('handling messages', async () => {
   mockedAxios.put.mockResolvedValue({ data: { event_id: 'test@matrix' } })
   mockedStorage.getRoomId.mockResolvedValue('testMatrixRoom')
   mockedStorage.getUserId.mockResolvedValue('testMatrixUser')
-  mockedStorage.getMessageId.mockResolvedValue('testMatrixMessage')
+  mockedStorage.getMessageId.mockResolvedValueOnce(undefined) // For checking if the Message already exists
+  mockedStorage.getMessageId.mockResolvedValue('testMatrixMessage') // For checking the parent message
 
   await expect(handle({ ...rcMessage, tmid: 'threadId' })).resolves.toBe(
     undefined
