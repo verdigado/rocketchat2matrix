@@ -2,3 +2,4 @@ semi: false
 singleQuote: true
 endOfLine: lf
 bracketSpacing: true
+trailingComma: es5
