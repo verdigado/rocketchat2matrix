@@ -1,5 +1,5 @@
 variables:
-  - &node_image 'node:20.5.1-alpine'
+  - &node_image 'node:20.6.0-alpine'
   - &create_synapse_access_token >-
     echo '{"user_id":"ci-dummy","access_token":"ci-dummy","home_server":"ci-dummy","device_id":"ci-dummy"}' > src/config/synapse_access_token.json
 
