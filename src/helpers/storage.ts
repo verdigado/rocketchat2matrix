@@ -25,6 +25,12 @@ export function getMapping(
   })
 }
 
+export function getMappingByMatrixId(id: string): Promise<IdMapping | null> {
+  return AppDataSource.manager.findOneBy(IdMapping, {
+    matrixId: id,
+  })
+}
+
 export async function save(entity: IdMapping | Membership): Promise<void> {
   await AppDataSource.manager.save(entity)
 }
