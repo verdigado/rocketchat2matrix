@@ -83,10 +83,18 @@ export function mapRoom(rcRoom: RcRoom): MatrixRoom {
       break
 
     case RcRoomTypes.live:
+      const messageLivechat = `Room ${
+        rcRoom.name || 'with ID: ' + rcRoom._id
+      } is a live chat. Migration not implemented`
+      log.warn(messageLivechat)
+      throw new Error(messageLivechat)
+
     default:
-      const message = `Room type ${rcRoom.t} is unknown or unimplemented`
-      log.error(message)
-      throw new Error(message)
+      const messageUnknownRoom = `Room ${
+        rcRoom.name || 'with ID: ' + rcRoom._id
+      } is of type ${rcRoom.t}, which is unknown or unimplemented`
+      log.error(messageUnknownRoom)
+      throw new Error(messageUnknownRoom)
   }
   return room
 }
@@ -98,7 +106,7 @@ export function getCreator(rcRoom: RcRoom): string {
     return rcRoom.uids[0]
   } else {
     log.warn(
-      `Creator ID could not be determined for room ${rcRoom.name} of type ${rcRoom.t}. This is normal for the default room.`
+      `Creator ID could not be determined for room ${rcRoom.name} of type ${rcRoom.t}. This is normal for the default room. Using admin user.`
     )
     return ''
   }

@@ -161,7 +161,7 @@ export async function handle(rcMessage: RcMessage): Promise<void> {
       case 'added-user-to-team': // Added user to team
       case 'r': // Room name changed
       case 'rm': // Message removed
-        log.info(
+        log.warn(
           `Message ${rcMessage._id} is of type ${rcMessage.t}, for which Rocket.Chat does not provide the initial state information, skipping.`
         )
         return

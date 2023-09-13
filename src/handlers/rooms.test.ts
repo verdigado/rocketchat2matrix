@@ -106,7 +106,9 @@ test('mapping private rooms', () => {
 test('mapping live chats', () => {
   expect(() =>
     mapRoom({ _id: 'liveChatId', t: RcRoomTypes.live })
-  ).toThrowError('Room type l is unknown')
+  ).toThrowError(
+    'Room with ID: liveChatId is a live chat. Migration not implemented'
+  )
 })
 
 test('getting creator', () => {
