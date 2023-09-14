@@ -1,3 +1,4 @@
+import { AxiosError } from 'axios'
 import { Entity, entities } from '../Entities'
 import { IdMapping } from '../entity/IdMapping'
 import log from '../helpers/logger'
@@ -160,11 +161,26 @@ export async function inviteMember(
   creatorSessionOptions: SessionOptions | object
 ): Promise<void> {
   log.http(`Invite member ${inviteeId}`)
-  await axios.post(
-    `/_matrix/client/v3/rooms/${roomId}/invite`,
-    { user_id: inviteeId },
-    creatorSessionOptions
-  )
+  try {
+    await axios.post(
+      `/_matrix/client/v3/rooms/${roomId}/invite`,
+      { user_id: inviteeId },
+      creatorSessionOptions
+    )
+  } catch (error) {
+    if (
+      error instanceof AxiosError &&
+      error.response &&
+      error.response.data.errcode === 'M_FORBIDDEN' &&
+      error.response.data.error === `${inviteeId} is already in the room.`
+    ) {
+      log.debug(
+        `User ${inviteeId} is already in room ${roomId}, probably because this user created the room as a fallback.`
+      )
+    } else {
+      throw error
+    }
+  }
 }
 
 export async function acceptInvitation(

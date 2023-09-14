@@ -1,5 +1,6 @@
 import { expect, jest, test } from '@jest/globals'
 import axios from 'axios'
+import { Entity, entities } from '../Entities'
 import { IdMapping } from '../entity/IdMapping'
 import * as storage from '../helpers/storage'
 import { SessionOptions } from '../helpers/synapse'
@@ -9,15 +10,14 @@ import {
   RcRoom,
   RcRoomTypes,
   acceptInvitation,
+  createDirectChatMemberships,
   createMapping,
   getCreator,
   getFilteredMembers,
   inviteMember,
   mapRoom,
-  createDirectChatMemberships,
   registerRoom,
 } from './rooms'
-import { Entity, entities } from '../Entities'
 
 jest.mock('axios')
 const mockedAxios = axios as jest.Mocked<typeof axios>
