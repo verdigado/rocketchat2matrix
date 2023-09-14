@@ -1,7 +1,7 @@
 import { DataSource } from 'typeorm'
+import { Entity, entities } from '../Entities'
 import { IdMapping } from '../entity/IdMapping'
 import { Membership } from '../entity/Membership'
-import { Entity, entities } from '../Entities'
 
 const AppDataSource = new DataSource({
   type: 'sqlite',
@@ -23,6 +23,10 @@ export function getMapping(
     rcId: id,
     type: type,
   })
+}
+
+export function getAllMappingsByType(type: number): Promise<IdMapping[]> {
+  return AppDataSource.manager.findBy(IdMapping, { type })
 }
 
 export function getMappingByMatrixId(id: string): Promise<IdMapping | null> {
