@@ -211,7 +211,7 @@ export async function handle(rcMessage: RcMessage): Promise<void> {
       ts,
       rcMessage._id
     )
-    createMapping(rcMessage._id, event_id)
+    await createMapping(rcMessage._id, event_id)
   } catch (error) {
     if (
       error instanceof AxiosError &&
@@ -260,7 +260,7 @@ export async function handle(rcMessage: RcMessage): Promise<void> {
         ts,
         rcMessage._id
       )
-      createMapping(rcMessage._id, event_id)
+      await createMapping(rcMessage._id, event_id)
     } else {
       throw error
     }
