@@ -26,4 +26,7 @@ curl --request POST \
   --data '{"type": "m.login.password","user": "verdiadmin","password": "verdiadmin","device_id": "DEV"}' \
 > src/config/synapse_access_token.json 2> /dev/null
 
+echo 'Removing log files'
+rm ./*.log
+
 echo 'Done.'
