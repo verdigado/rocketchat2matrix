@@ -83,7 +83,9 @@ async function removeExcessRoomMembers() {
           )
           const memberMapping = await getMappingByMatrixId(actualMember)
           if (!memberMapping || !memberMapping.accessToken) {
-            throw new Error(`Could not find access token for member ${actualMember}, this is a bug`)
+            throw new Error(
+              `Could not find access token for member ${actualMember}, this is a bug`
+            )
           }
 
           await axios.post(

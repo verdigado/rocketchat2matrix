@@ -8,10 +8,12 @@ export default winston.createLogger({
       filename: 'warn.log',
       level: 'warn',
       silent: process.env.NODE_ENV === 'test',
+      options: { flags: 'w' },
     }),
     new winston.transports.File({
       filename: 'combined.log',
       silent: process.env.NODE_ENV === 'test',
+      options: { flags: 'w' },
     }),
   ],
   format: winston.format.combine(
