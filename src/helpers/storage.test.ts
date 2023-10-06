@@ -1,5 +1,8 @@
 process.env.DATABASE = ':memory:'
 import { beforeAll, expect, test } from '@jest/globals'
+import { Entity, entities } from '../Entities'
+import { IdMapping } from '../entity/IdMapping'
+import { Membership } from '../entity/Membership'
 import {
   createMembership,
   getAccessToken,
@@ -11,9 +14,6 @@ import {
   initStorage,
   save,
 } from './storage'
-import { IdMapping } from '../entity/IdMapping'
-import { Membership } from '../entity/Membership'
-import { Entity, entities } from '../Entities'
 
 const mapping = new IdMapping()
 mapping.rcId = 'rcId'

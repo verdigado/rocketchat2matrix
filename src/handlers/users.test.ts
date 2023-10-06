@@ -1,8 +1,10 @@
 process.env.REGISTRATION_SHARED_SECRET = 'ThisIsSoSecretWow'
 process.env.EXCLUDED_USERS = 'excludedUser1,excludedUser2'
+process.env.ADMIN_USERNAME = 'testAdmin'
 import { expect, jest, test } from '@jest/globals'
 import axios from 'axios'
-import * as storage from '../helpers/storage'
+import { Entity, entities } from '../Entities'
+import { IdMapping } from '../entity/IdMapping'
 import {
   MatrixUser,
   RcUser,
@@ -12,8 +14,7 @@ import {
   mapUser,
   userIsExcluded,
 } from '../handlers/users'
-import { IdMapping } from '../entity/IdMapping'
-import { Entity, entities } from '../Entities'
+import * as storage from '../helpers/storage'
 
 jest.mock('axios')
 const mockedAxios = axios as jest.Mocked<typeof axios>

@@ -1,3 +1,4 @@
+import { AxiosError } from 'axios'
 import { Entity, entities } from '../Entities'
 import { IdMapping } from '../entity/IdMapping'
 import log from '../helpers/logger'
@@ -83,10 +84,18 @@ export function mapRoom(rcRoom: RcRoom): MatrixRoom {
       break
 
     case RcRoomTypes.live:
+      const messageLivechat = `Room ${
+        rcRoom.name || 'with ID: ' + rcRoom._id
+      } is a live chat. Migration not implemented`
+      log.warn(messageLivechat)
+      throw new Error(messageLivechat)
+
     default:
-      const message = `Room type ${rcRoom.t} is unknown or unimplemented`
-      log.error(message)
-      throw new Error(message)
+      const messageUnknownRoom = `Room ${
+        rcRoom.name || 'with ID: ' + rcRoom._id
+      } is of type ${rcRoom.t}, which is unknown or unimplemented`
+      log.error(messageUnknownRoom)
+      throw new Error(messageUnknownRoom)
   }
   return room
 }
@@ -98,7 +107,7 @@ export function getCreator(rcRoom: RcRoom): string {
     return rcRoom.uids[0]
   } else {
     log.warn(
-      `Creator ID could not be determined for room ${rcRoom.name} of type ${rcRoom.t}. This is normal for the default room.`
+      `Creator ID could not be determined for room ${rcRoom.name} of type ${rcRoom.t}. This is normal for the default room. Using admin user.`
     )
     return ''
   }
@@ -152,11 +161,26 @@ export async function inviteMember(
   creatorSessionOptions: SessionOptions | object
 ): Promise<void> {
   log.http(`Invite member ${inviteeId}`)
-  await axios.post(
-    `/_matrix/client/v3/rooms/${roomId}/invite`,
-    { user_id: inviteeId },
-    creatorSessionOptions
-  )
+  try {
+    await axios.post(
+      `/_matrix/client/v3/rooms/${roomId}/invite`,
+      { user_id: inviteeId },
+      creatorSessionOptions
+    )
+  } catch (error) {
+    if (
+      error instanceof AxiosError &&
+      error.response &&
+      error.response.data.errcode === 'M_FORBIDDEN' &&
+      error.response.data.error === `${inviteeId} is already in the room.`
+    ) {
+      log.debug(
+        `User ${inviteeId} is already in room ${roomId}, probably because this user created the room as a fallback.`
+      )
+    } else {
+      throw error
+    }
+  }
 }
 
 export async function acceptInvitation(

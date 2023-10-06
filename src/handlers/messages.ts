@@ -1,8 +1,17 @@
+import { AxiosError } from 'axios'
 import { Entity, entities } from '../Entities'
 import { IdMapping } from '../entity/IdMapping'
 import log from '../helpers/logger'
-import { getMessageId, getRoomId, getUserId, save } from '../helpers/storage'
+import {
+  getMapping,
+  getMappingByMatrixId,
+  getMessageId,
+  getRoomId,
+  getUserId,
+  save,
+} from '../helpers/storage'
 import { axios, formatUserSessionOptions } from '../helpers/synapse'
+import { acceptInvitation, inviteMember } from './rooms'
 
 const applicationServiceToken = process.env.AS_TOKEN || ''
 if (!applicationServiceToken) {
@@ -93,17 +102,77 @@ export async function handle(rcMessage: RcMessage): Promise<void> {
     return
   }
 
-  if (rcMessage.t) {
-    log.warn(`Message ${rcMessage._id} is of type ${rcMessage.t}, skipping.`)
-    return
-  }
-
   const room_id = await getRoomId(rcMessage.rid)
   if (!room_id) {
     log.warn(
       `Could not find room ${rcMessage.rid} for message ${rcMessage._id}, skipping.`
     )
     return
+  }
+
+  if (rcMessage.t) {
+    switch (rcMessage.t) {
+      case 'ru': // User removed by
+      case 'ul': // User left
+      case 'ult': // User left team
+      case 'removed-user-from-team': // Removed user from team
+        log.info(
+          `Message ${rcMessage._id} is of type ${rcMessage.t}, removing member ${rcMessage.msg} from room ${room_id}`
+        )
+
+        const members = (
+          await axios.get(
+            `/_matrix/client/v3/rooms/${room_id}/joined_members`,
+            formatUserSessionOptions(applicationServiceToken)
+          )
+        ).data.joined
+        if (!members) {
+          const errorMessage = `Could not determine members of room ${room_id}, aborting`
+          log.error(errorMessage)
+          throw new Error(errorMessage)
+        }
+
+        const matrixUser =
+          Object.keys(members).find((key) =>
+            key.includes(rcMessage.msg.toLowerCase())
+          ) || ''
+
+        const userMapping = await getMappingByMatrixId(matrixUser)
+        if (!userMapping?.accessToken) {
+          log.warn(
+            `Could not get access token for ${rcMessage.msg}, maybe user is not a member, skipping.`
+          )
+          return
+        }
+
+        log.http(`User ${matrixUser} leaves room ${room_id}`)
+        await axios.post(
+          `/_matrix/client/v3/rooms/${room_id}/leave`,
+          { reason: `Event type ${rcMessage.t}` },
+          formatUserSessionOptions(userMapping.accessToken)
+        )
+        return
+
+      case 'uj': // User joined channel
+      case 'ujt': // User joined team
+      case 'ut': // User joined conversation
+
+      case 'au': // User added by
+      case 'added-user-to-team': // Added user to team
+      case 'r': // Room name changed
+      case 'rm': // Message removed
+        log.warn(
+          `Message ${rcMessage._id} is of type ${rcMessage.t}, for which Rocket.Chat does not provide the initial state information, skipping.`
+        )
+        return
+
+      case 'user-muted': // User muted by
+      default:
+        log.warn(
+          `Message ${rcMessage._id} is of unhandled type ${rcMessage.t}, skipping.`
+        )
+        return
+    }
   }
 
   const user_id = await getUserId(rcMessage.u._id)
@@ -134,13 +203,66 @@ export async function handle(rcMessage: RcMessage): Promise<void> {
     }
   }
 
-  const event_id = await createMessage(
-    matrixMessage,
-    room_id,
-    user_id,
-    ts,
-    rcMessage._id
-  )
+  try {
+    const event_id = await createMessage(
+      matrixMessage,
+      room_id,
+      user_id,
+      ts,
+      rcMessage._id
+    )
+    await createMapping(rcMessage._id, event_id)
+  } catch (error) {
+    if (
+      error instanceof AxiosError &&
+      error.response &&
+      error.response.data.errcode === 'M_FORBIDDEN' &&
+      error.response.data.error === `User ${user_id} not in room ${room_id}`
+    ) {
+      log.info(error.response.data.error + ', adding.')
 
-  createMapping(rcMessage._id, event_id)
+      const userMapping = await getMapping(
+        rcMessage.u._id,
+        entities[Entity.Users].mappingType
+      )
+      if (!userMapping || !userMapping.matrixId || !userMapping.accessToken) {
+        log.warn(`Could not determine joining user, skipping.`, rcMessage)
+        return
+      }
+
+      // Get room creator session or use empty axios options
+      let userSessionOptions = {}
+      const roomCreatorId = (
+        await axios.get(`/_synapse/admin/v1/rooms/${room_id}`)
+      ).data.creator
+      if (!roomCreatorId) {
+        log.warn(
+          `Could not determine room creator for room ${room_id}, using admin credentials.`
+        )
+      } else {
+        const creatorMapping = await getMappingByMatrixId(roomCreatorId)
+        if (!creatorMapping?.accessToken) {
+          log.warn(`Could not access token for ${roomCreatorId}, skipping.`)
+          return
+        }
+        userSessionOptions = formatUserSessionOptions(
+          creatorMapping.accessToken
+        )
+      }
+
+      await inviteMember(userMapping.matrixId, room_id, userSessionOptions)
+      await acceptInvitation(userMapping, room_id)
+
+      const event_id = await createMessage(
+        matrixMessage,
+        room_id,
+        user_id,
+        ts,
+        rcMessage._id
+      )
+      await createMapping(rcMessage._id, event_id)
+    } else {
+      throw error
+    }
+  }
 }

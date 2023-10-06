@@ -1,9 +1,10 @@
 import { createHmac } from 'node:crypto'
-import log from '../helpers/logger'
-import { axios } from '../helpers/synapse'
-import { createMembership, getUserId, save } from '../helpers/storage'
-import { IdMapping } from '../entity/IdMapping'
 import { Entity, entities } from '../Entities'
+import adminAccessToken from '../config/synapse_access_token.json'
+import { IdMapping } from '../entity/IdMapping'
+import log from '../helpers/logger'
+import { createMembership, getUserId, save } from '../helpers/storage'
+import { axios } from '../helpers/synapse'
 
 export type RcUser = {
   _id: string
@@ -41,15 +42,22 @@ export function mapUser(rcUser: RcUser): MatrixUser {
   }
 }
 
-const registration_shared_secret = process.env.REGISTRATION_SHARED_SECRET || ''
-if (!registration_shared_secret) {
+const registrationSharedSecret = process.env.REGISTRATION_SHARED_SECRET || ''
+if (!registrationSharedSecret) {
   const message = 'No REGISTRATION_SHARED_SECRET found in .env.'
   log.error(message)
   throw new Error(message)
 }
 
+const adminUsername = process.env.ADMIN_USERNAME || ''
+if (!adminUsername) {
+  const message = 'No ADMIN_USERNAME found in .env.'
+  log.error(message)
+  throw new Error(message)
+}
+
 export function generateHmac(user: MatrixUser): string {
-  const hmac = createHmac('sha1', registration_shared_secret)
+  const hmac = createHmac('sha1', registrationSharedSecret)
   hmac.write(
     `${user.nonce}\0${user.username}\0${user.password}\0${
       user.admin ? 'admin' : 'notadmin'
@@ -87,7 +95,7 @@ export function userIsExcluded(rcUser: RcUser): boolean {
     reasons.push(`username "${rcUser.username}" is on exclusion list`)
 
   if (reasons.length > 0) {
-    log.debug(`User ${rcUser.name} is excluded: ${reasons.join(', ')}`)
+    log.warn(`User ${rcUser.name} is excluded: ${reasons.join(', ')}`)
     return true
   }
   return false
@@ -124,15 +132,18 @@ export async function createUser(rcUser: RcUser): Promise<MatrixUser> {
 export async function handle(rcUser: RcUser): Promise<void> {
   log.info(`Parsing user: ${rcUser.name}: ${rcUser._id}`)
 
-  if (userIsExcluded(rcUser)) {
-    return undefined
-  }
-
   const matrixId = await getUserId(rcUser._id)
   if (matrixId) {
     log.debug(`Mapping exists: ${rcUser._id} -> ${matrixId}`)
   } else {
-    const matrixUser = await createUser(rcUser)
-    await createMapping(rcUser._id, matrixUser)
+    if (rcUser.username === adminUsername) {
+      log.info(
+        `User ${rcUser.username} is defined as admin in ENV, mapping as such`
+      )
+      await createMapping(rcUser._id, adminAccessToken as unknown as MatrixUser)
+    } else if (!userIsExcluded(rcUser)) {
+      const matrixUser = await createUser(rcUser)
+      await createMapping(rcUser._id, matrixUser)
+    }
   }
 }
