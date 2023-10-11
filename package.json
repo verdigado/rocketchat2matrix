@@ -24,7 +24,6 @@
     "test": "rm -rf dist/ && jest",
     "compile": "rm -rf dist/ && tsc",
     "start": "npm run compile && node dist/app.js",
-    "reactions": "npm run compile && node dist/reactions.js",
     "prepare": "husky install"
   },
   "version": "0.1.0",
@@ -51,7 +50,6 @@
     "axios": "^1.5.0",
     "dotenv": "^16.3.1",
     "n-readlines": "^1.0.1",
-    "node-emoji": "^2.1.0",
     "reflect-metadata": "^0.1.13",
     "sqlite3": "^5.1.6",
     "typeorm": "^0.3.17",
