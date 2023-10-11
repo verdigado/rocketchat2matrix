@@ -10,8 +10,13 @@ import {
   getUserId,
   save,
 } from '../helpers/storage'
-import { axios, formatUserSessionOptions } from '../helpers/synapse'
+import {
+  axios,
+  formatUserSessionOptions,
+  getUserSessionOptions,
+} from '../helpers/synapse'
 import { acceptInvitation, inviteMember } from './rooms'
+import reactionKeys from '../reactions.json'
 
 const applicationServiceToken = process.env.AS_TOKEN || ''
 if (!applicationServiceToken) {
@@ -39,7 +44,11 @@ export type RcMessage = {
   pinned?: boolean
   drid?: string // The direct room id (if belongs to a direct room).
   // attachments?: any[] // An array of attachment objects, available only when the message has at least one attachment.
-  reactions?: object // Object containing reaction information associated with the message.
+  reactions?: {
+    [key: string]: {
+      usernames: string[]
+    }
+  }
 }
 
 export type MatrixMessage = {
@@ -91,6 +100,40 @@ export async function createMessage(
       formatUserSessionOptions(applicationServiceToken)
     )
   ).data.event_id
+}
+
+export async function handleReactions(
+  reactions: object,
+  matrixMessageId: string,
+  matrixRoomId: string
+): Promise<void> {
+  for (const [reaction, value] of Object.entries(reactions)) {
+    // Lookup key/emoji
+    const reactionKey = (reactionKeys as any)[reaction]
+    value.usernames.map(async (rcUsername: string) => {
+      // generate transaction id
+      const transactionId = Buffer.from(
+        [matrixMessageId, reaction, rcUsername].join('\0')
+      ).toString('base64')
+      // lookup user access token
+      const userSessionOptions = await getUserSessionOptions(rcUsername)
+      log.http(
+        `Adding reaction to message ${matrixMessageId} with symbol ${reactionKey} for user ${rcUsername}`
+      )
+      // put reaction
+      await axios.put(
+        `/_matrix/client/v3/rooms/${matrixRoomId}/send/m.reaction/${transactionId}`,
+        {
+          'm.relates_to': {
+            rel_type: 'm.annotation',
+            event_id: matrixMessageId,
+            key: reactionKey,
+          },
+        },
+        userSessionOptions
+      )
+    })
+  }
 }
 
 export async function handle(rcMessage: RcMessage): Promise<void> {
@@ -212,6 +255,13 @@ export async function handle(rcMessage: RcMessage): Promise<void> {
       rcMessage._id
     )
     await createMapping(rcMessage._id, event_id)
+    if (rcMessage.reactions) {
+      log.info(
+        `Parsing reactions for message ${rcMessage._id}`,
+        rcMessage.reactions
+      )
+      await handleReactions(rcMessage, event_id, room_id)
+    }
   } catch (error) {
     if (
       error instanceof AxiosError &&
@@ -261,6 +311,13 @@ export async function handle(rcMessage: RcMessage): Promise<void> {
         rcMessage._id
       )
       await createMapping(rcMessage._id, event_id)
+      if (rcMessage.reactions) {
+        log.info(
+          `Parsing reactions for message ${rcMessage._id}`,
+          rcMessage.reactions
+        )
+        await handleReactions(rcMessage, event_id, room_id)
+      }
     } else {
       throw error
     }
