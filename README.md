@@ -49,7 +49,7 @@ app_service_config_files:
   - /data/app-service.yaml
 ```
 
-Now edit `app-service.example.yaml` and save it at `files/app-service.yaml`, changing the tokens.
+Now edit `app-service.example.yaml` and save it at `files/app-service.yaml`, changing the tokens manually.
 
 Copy over `.env.example` to `.env` and insert your values.
 
@@ -101,4 +101,8 @@ Then you can restart with an empty but quite equal server, following the instruc
 
 - Getting data from Rocket.Chat via (currently) manual mongodb export
 - Room to Channel conversion:
-  - Read-only attributes of 2 verdigado channels not converted to power levels due to complexity
+  - Read-only attributes of channels not converted to power levels due to complexity
+- Reactions:
+  - So far only reactions used in our chats have been translated
+  - Individual logos of *netzbegruenung* and *verdigado* have been replaced by a generic sunflower
+  - Skin colour tones and genders have been ignored in the manual translation, using the neutral versions
