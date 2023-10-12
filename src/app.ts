@@ -75,9 +75,13 @@ async function removeExcessRoomMembers() {
     )
 
     // do action for any user in mx, but not in rc
+    const adminUsername = process.env.ADMIN_USERNAME || ''
     await Promise.all(
       actualMembers.map(async (actualMember) => {
-        if (!memberNames.includes(actualMember)) {
+        if (
+          !memberNames.includes(actualMember) &&
+          !actualMember.includes(adminUsername) // exclude admin from removal
+        ) {
           log.warn(
             `Member ${actualMember} should not be in room ${roomMapping.matrixId}, removing`
           )
