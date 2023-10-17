@@ -254,7 +254,6 @@ export async function handle(rcMessage: RcMessage): Promise<void> {
       ts,
       rcMessage._id
     )
-    await createMapping(rcMessage._id, event_id)
     if (rcMessage.reactions) {
       log.info(
         `Parsing reactions for message ${rcMessage._id}`,
@@ -262,6 +261,7 @@ export async function handle(rcMessage: RcMessage): Promise<void> {
       )
       await handleReactions(rcMessage, event_id, room_id)
     }
+    await createMapping(rcMessage._id, event_id)
   } catch (error) {
     if (
       error instanceof AxiosError &&
@@ -310,7 +310,6 @@ export async function handle(rcMessage: RcMessage): Promise<void> {
         ts,
         rcMessage._id
       )
-      await createMapping(rcMessage._id, event_id)
       if (rcMessage.reactions) {
         log.info(
           `Parsing reactions for message ${rcMessage._id}`,
@@ -318,6 +317,7 @@ export async function handle(rcMessage: RcMessage): Promise<void> {
         )
         await handleReactions(rcMessage, event_id, room_id)
       }
+      await createMapping(rcMessage._id, event_id)
     } else {
       throw error
     }
