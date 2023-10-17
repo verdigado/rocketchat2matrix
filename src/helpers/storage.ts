@@ -1,4 +1,4 @@
-import { DataSource } from 'typeorm'
+import { DataSource, ILike } from 'typeorm'
 import { Entity, entities } from '../Entities'
 import { IdMapping } from '../entity/IdMapping'
 import { Membership } from '../entity/Membership'
@@ -32,6 +32,15 @@ export function getAllMappingsByType(type: number): Promise<IdMapping[]> {
 export function getMappingByMatrixId(id: string): Promise<IdMapping | null> {
   return AppDataSource.manager.findOneBy(IdMapping, {
     matrixId: id,
+  })
+}
+
+export function getUserMappingByName(
+  username: string
+): Promise<IdMapping | null> {
+  return AppDataSource.manager.findOneBy(IdMapping, {
+    matrixId: ILike(`@${username.toLowerCase()}:%`),
+    type: entities[Entity.Users].mappingType,
   })
 }
 

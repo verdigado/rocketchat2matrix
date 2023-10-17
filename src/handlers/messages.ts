@@ -8,15 +8,12 @@ import {
   getMessageId,
   getRoomId,
   getUserId,
+  getUserMappingByName,
   save,
 } from '../helpers/storage'
-import {
-  axios,
-  formatUserSessionOptions,
-  getUserSessionOptions,
-} from '../helpers/synapse'
-import { acceptInvitation, inviteMember } from './rooms'
+import { axios, formatUserSessionOptions } from '../helpers/synapse'
 import reactionKeys from '../reactions.json'
+import { acceptInvitation, inviteMember } from './rooms'
 
 const applicationServiceToken = process.env.AS_TOKEN || ''
 if (!applicationServiceToken) {
@@ -109,6 +106,7 @@ export async function handleReactions(
 ): Promise<void> {
   for (const [reaction, value] of Object.entries(reactions)) {
     // Lookup key/emoji
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const reactionKey = (reactionKeys as any)[reaction]
     value.usernames.map(async (rcUsername: string) => {
       // generate transaction id
@@ -116,7 +114,19 @@ export async function handleReactions(
         [matrixMessageId, reaction, rcUsername].join('\0')
       ).toString('base64')
       // lookup user access token
-      const userSessionOptions = await getUserSessionOptions(rcUsername)
+      const userMapping = await getUserMappingByName(rcUsername)
+      if (!userMapping) {
+        throw new Error(`Could not find user mapping for name: ${rcUsername}`)
+      }
+      if (!userMapping.accessToken) {
+        throw new Error(
+          `User mapping for name ${rcUsername} has no access token`
+        )
+      }
+
+      const userSessionOptions = formatUserSessionOptions(
+        userMapping.accessToken
+      )
       log.http(
         `Adding reaction to message ${matrixMessageId} with symbol ${reactionKey} for user ${rcUsername}`
       )
@@ -259,7 +269,7 @@ export async function handle(rcMessage: RcMessage): Promise<void> {
         `Parsing reactions for message ${rcMessage._id}`,
         rcMessage.reactions
       )
-      await handleReactions(rcMessage, event_id, room_id)
+      await handleReactions(rcMessage.reactions, event_id, room_id)
     }
     await createMapping(rcMessage._id, event_id)
   } catch (error) {
@@ -315,7 +325,7 @@ export async function handle(rcMessage: RcMessage): Promise<void> {
           `Parsing reactions for message ${rcMessage._id}`,
           rcMessage.reactions
         )
-        await handleReactions(rcMessage, event_id, room_id)
+        await handleReactions(rcMessage.reactions, event_id, room_id)
       }
       await createMapping(rcMessage._id, event_id)
     } else {
