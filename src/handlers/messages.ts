@@ -1,4 +1,5 @@
 import { AxiosError } from 'axios'
+import * as emoji from 'node-emoji'
 import { Entity, entities } from '../Entities'
 import { IdMapping } from '../entity/IdMapping'
 import log from '../helpers/logger'
@@ -106,43 +107,55 @@ export async function handleReactions(
 ): Promise<void> {
   for (const [reaction, value] of Object.entries(reactions)) {
     // Lookup key/emoji
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const reactionKey = (reactionKeys as any)[reaction]
-    value.usernames.map(async (rcUsername: string) => {
-      // generate transaction id
-      const transactionId = Buffer.from(
-        [matrixMessageId, reaction, rcUsername].join('\0')
-      ).toString('base64')
-      // lookup user access token
-      const userMapping = await getUserMappingByName(rcUsername)
-      if (!userMapping) {
-        throw new Error(`Could not find user mapping for name: ${rcUsername}`)
-      }
-      if (!userMapping.accessToken) {
-        throw new Error(
-          `User mapping for name ${rcUsername} has no access token`
-        )
-      }
+    const reactionKey: string =
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (reactionKeys as any)[reaction] || emoji.get(reaction.replaceAll(':', ''))
+    if (!reactionKey) {
+      log.warn(
+        `Could not find an emoji for ${reaction} for message ${matrixMessageId}, skipping`
+      )
+      return
+    }
+    await Promise.all(
+      value.usernames.map(async (rcUsername: string) => {
+        // generate transaction id
+        const transactionId = Buffer.from(
+          [matrixMessageId, reaction, rcUsername].join('\0')
+        ).toString('base64')
+        // lookup user access token
+        const userMapping = await getUserMappingByName(rcUsername)
+        if (!userMapping) {
+          log.warn(
+            `Could not find user mapping for name: ${rcUsername}, skipping reaction ${reaction} for message ${matrixMessageId}`
+          )
+          return
+        }
+        if (!userMapping.accessToken) {
+          throw new Error(
+            `User mapping for name ${rcUsername} has no access token`
+          )
+        }
 
-      const userSessionOptions = formatUserSessionOptions(
-        userMapping.accessToken
-      )
-      log.http(
-        `Adding reaction to message ${matrixMessageId} with symbol ${reactionKey} for user ${rcUsername}`
-      )
-      // put reaction
-      await axios.put(
-        `/_matrix/client/v3/rooms/${matrixRoomId}/send/m.reaction/${transactionId}`,
-        {
-          'm.relates_to': {
-            rel_type: 'm.annotation',
-            event_id: matrixMessageId,
-            key: reactionKey,
+        const userSessionOptions = formatUserSessionOptions(
+          userMapping.accessToken
+        )
+        log.http(
+          `Adding reaction to message ${matrixMessageId} with symbol ${reactionKey} for user ${rcUsername}`
+        )
+        // put reaction
+        await axios.put(
+          `/_matrix/client/v3/rooms/${matrixRoomId}/send/m.reaction/${transactionId}`,
+          {
+            'm.relates_to': {
+              rel_type: 'm.annotation',
+              event_id: matrixMessageId,
+              key: reactionKey,
+            },
           },
-        },
-        userSessionOptions
-      )
-    })
+          userSessionOptions
+        )
+      })
+    )
   }
 }
 
