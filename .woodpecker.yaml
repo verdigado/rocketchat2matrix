@@ -1,17 +1,17 @@
 variables:
-  - &node_image 'node:20.6.1-alpine'
+  - &node_image 'node:20.8.1-alpine'
   - &create_synapse_access_token >-
     echo '{"user_id":"ci-dummy","access_token":"ci-dummy","home_server":"ci-dummy","device_id":"ci-dummy"}' > src/config/synapse_access_token.json
 
 steps:
   lint-markdown:
-    image: markdownlint/markdownlint:0.12.0
+    image: markdownlint/markdownlint:0.13.0
     group: test
     commands:
       - mdl .
 
   check-pre-commit:
-    image: python:3.11.5
+    image: python:3.12.0
     group: test
     environment:
       - SKIP=no-commit-to-branch # Ignore "don't commit to protected branch" check
