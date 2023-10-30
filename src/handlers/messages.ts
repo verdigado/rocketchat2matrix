@@ -63,6 +63,10 @@ export type MatrixMessage = {
   }
 }
 
+export type ReactionKeys = {
+  [key: string]: string
+}
+
 export function mapMessage(rcMessage: RcMessage): MatrixMessage {
   return {
     body: rcMessage.msg,
@@ -108,14 +112,17 @@ export async function handleReactions(
   for (const [reaction, value] of Object.entries(reactions)) {
     // Lookup key/emoji
     const reactionKey: string =
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (reactionKeys as any)[reaction] || emoji.get(reaction.replaceAll(':', ''))
+      (reactionKeys as ReactionKeys)[reaction] ||
+      emoji.get(reaction.replaceAll(':', '')) ||
+      ''
+
     if (!reactionKey) {
       log.warn(
         `Could not find an emoji for ${reaction} for message ${matrixMessageId}, skipping`
       )
       return
     }
+
     await Promise.all(
       value.usernames.map(async (rcUsername: string) => {
         // generate transaction id
