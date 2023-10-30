@@ -261,14 +261,22 @@ async function handleMemberships(
 
   await Promise.all(
     memberMappings.map(async (memberMapping) => {
-      await inviteMember(
-        memberMapping.matrixId || '',
-        room.room_id || '',
-        creatorSessionOptions
-      )
-      await acceptInvitation(memberMapping, room.room_id || '')
+      await addMember(memberMapping, room.room_id || '', creatorSessionOptions)
     })
   )
+}
+
+export async function addMember(
+  memberMapping: IdMapping,
+  matrixRoomId: string,
+  creatorSessionOptions: object | SessionOptions
+) {
+  await inviteMember(
+    memberMapping.matrixId || '',
+    matrixRoomId,
+    creatorSessionOptions
+  )
+  await acceptInvitation(memberMapping, matrixRoomId)
 }
 
 export async function handle(rcRoom: RcRoom): Promise<void> {

@@ -14,7 +14,7 @@ import {
 } from '../helpers/storage'
 import { axios, formatUserSessionOptions } from '../helpers/synapse'
 import reactionKeys from '../reactions.json'
-import { acceptInvitation, inviteMember } from './rooms'
+import { addMember } from './rooms'
 
 const applicationServiceToken = process.env.AS_TOKEN || ''
 if (!applicationServiceToken) {
@@ -259,6 +259,7 @@ export async function handle(rcMessage: RcMessage): Promise<void> {
   const matrixMessage = mapMessage(rcMessage)
 
   const ts = new Date(rcMessage.ts.$date).valueOf()
+
   if (rcMessage.tmid) {
     const event_id = await getMessageId(rcMessage.tmid)
     if (!event_id) {
@@ -330,8 +331,7 @@ export async function handle(rcMessage: RcMessage): Promise<void> {
         )
       }
 
-      await inviteMember(userMapping.matrixId, room_id, userSessionOptions)
-      await acceptInvitation(userMapping, room_id)
+      await addMember(userMapping, room_id, userSessionOptions)
 
       const event_id = await createMessage(
         matrixMessage,
