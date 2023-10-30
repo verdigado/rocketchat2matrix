@@ -16,11 +16,11 @@ export async function initStorage(): Promise<void> {
 }
 
 export function getMapping(
-  id: string,
+  rcId: string,
   type: number
 ): Promise<IdMapping | null> {
   return AppDataSource.manager.findOneBy(IdMapping, {
-    rcId: id,
+    rcId: rcId,
     type: type,
   })
 }
@@ -29,9 +29,11 @@ export function getAllMappingsByType(type: number): Promise<IdMapping[]> {
   return AppDataSource.manager.findBy(IdMapping, { type })
 }
 
-export function getMappingByMatrixId(id: string): Promise<IdMapping | null> {
+export function getMappingByMatrixId(
+  matrixId: string
+): Promise<IdMapping | null> {
   return AppDataSource.manager.findOneBy(IdMapping, {
-    matrixId: id,
+    matrixId: matrixId,
   })
 }
 
@@ -48,8 +50,11 @@ export async function save(entity: IdMapping | Membership): Promise<void> {
   await AppDataSource.manager.save(entity)
 }
 
-export async function getAccessToken(id: string): Promise<string | undefined> {
-  return (await getMapping(id, entities[Entity.Users].mappingType))?.accessToken
+export async function getAccessToken(
+  rcId: string
+): Promise<string | undefined> {
+  return (await getMapping(rcId, entities[Entity.Users].mappingType))
+    ?.accessToken
 }
 
 export async function createMembership(
