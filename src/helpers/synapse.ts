@@ -34,11 +34,11 @@ export function formatUserSessionOptions(accessToken: string): SessionOptions {
 }
 
 export async function getUserSessionOptions(
-  id: string
+  rcId: string
 ): Promise<SessionOptions> {
-  const accessToken = await getAccessToken(id)
+  const accessToken = await getAccessToken(rcId)
   if (!accessToken) {
-    throw new Error(`Could not retrieve access token for ID ${id}`)
+    throw new Error(`Could not retrieve access token for ID ${rcId}`)
   }
   return formatUserSessionOptions(accessToken)
 }

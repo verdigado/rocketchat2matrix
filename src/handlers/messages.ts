@@ -21,6 +21,9 @@ if (!applicationServiceToken) {
   throw new Error(message)
 }
 
+/**
+ * Type of Rocket.Chat messages
+ */
 export type RcMessage = {
   _id: string
   t?: string // Event type
@@ -47,6 +50,9 @@ export type RcMessage = {
   }
 }
 
+/**
+ * Type of Matrix message event bodies
+ */
 export type MatrixMessage = {
   body: string
   msgtype: 'm.text'
@@ -61,10 +67,18 @@ export type MatrixMessage = {
   }
 }
 
+/**
+ * Reaction emojis translated from Rocket.Chat to Unicode emojis, which Matrix uses
+ */
 export type ReactionKeys = {
   [key: string]: string
 }
 
+/**
+ * Translate a Rocket.Chat message to a Matrix message event body
+ * @param rcMessage The Rocket.Chat message to convert
+ * @returns The Matrix event body
+ */
 export function mapMessage(rcMessage: RcMessage): MatrixMessage {
   return {
     body: rcMessage.msg,
@@ -73,6 +87,11 @@ export function mapMessage(rcMessage: RcMessage): MatrixMessage {
   }
 }
 
+/**
+ * Save an ID mapping in the local database
+ * @param rcId Rocket.Chat message ID
+ * @param matrixId Matrix message ID
+ */
 export async function createMapping(
   rcId: string,
   matrixId: string
@@ -86,6 +105,15 @@ export async function createMapping(
   log.debug('Mapping added:', messageMapping)
 }
 
+/**
+ * Send a request to Synapse, creating the message event
+ * @param matrixMessage The Matrix event body to use
+ * @param room_id The Matrix room, the message will be posted to
+ * @param user_id The user the message will be posted by
+ * @param ts The timestampt to which the message will be dated
+ * @param transactionId An unique identifier to distinguish identical messages
+ * @returns The Matrix Message/event ID
+ */
 export async function createMessage(
   matrixMessage: MatrixMessage,
   room_id: string,
@@ -102,12 +130,18 @@ export async function createMessage(
   ).data.event_id
 }
 
+/**
+ * Add reactions to the event
+ * @param reactions A Rocket.Chat reactions object
+ * @param matrixMessageId The Matrix event reacted to
+ * @param matrixRoomId The Matrix room
+ */
 export async function handleReactions(
-  reactions: object,
+  reactions: RcMessage['reactions'],
   matrixMessageId: string,
   matrixRoomId: string
 ): Promise<void> {
-  for (const [reaction, value] of Object.entries(reactions)) {
+  for (const [reaction, value] of Object.entries(reactions || {})) {
     // Lookup key/emoji
     const reactionKey: string =
       (reactionKeys as ReactionKeys)[reaction] ||
@@ -161,6 +195,10 @@ export async function handleReactions(
   }
 }
 
+/**
+ * Handle a line of a Rocket.Chat message JSON export
+ * @param rcMessage A Rocket.Chat message object
+ */
 export async function handle(rcMessage: RcMessage): Promise<void> {
   log.info(`Parsing message with ID: ${rcMessage._id}`)
 
@@ -274,6 +312,14 @@ export async function handle(rcMessage: RcMessage): Promise<void> {
   )
 }
 
+/**
+ * Wrapper function to combine the creation of a message, the reactions, adding of authors and the database mapping
+ * @param matrixMessage The Matrix message event body
+ * @param room_id The Matrix room ID
+ * @param user_id The Matrix ID of the author
+ * @param ts The Timestamp the message was originally created
+ * @param rcMessage The originam Rocket.Chat message object
+ */
 async function createEventsAndMapping(
   matrixMessage: MatrixMessage,
   room_id: string,

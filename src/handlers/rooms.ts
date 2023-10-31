@@ -18,6 +18,9 @@ import {
 } from '../helpers/synapse'
 import { RcUser } from './users'
 
+/**
+ * Types of Rocket.Chat rooms
+ */
 export const enum RcRoomTypes {
   direct = 'd',
   chat = 'c',
@@ -25,6 +28,9 @@ export const enum RcRoomTypes {
   live = 'l',
 }
 
+/**
+ * Type of Rocket.Chat rooms
+ */
 export type RcRoom = {
   _id: string
   t: RcRoomTypes
@@ -37,17 +43,26 @@ export type RcRoom = {
   description?: string
 }
 
+/**
+ * Presets of Matrix room permission settings
+ */
 export const enum MatrixRoomPresets {
   private = 'private_chat',
   public = 'public_chat',
   trusted = 'trusted_private_chat',
 }
 
+/**
+ * Presets of Matrix room visibility settings
+ */
 export const enum MatrixRoomVisibility {
   private = 'private',
   public = 'public',
 }
 
+/**
+ * Type of Matrix rooms
+ */
 export type MatrixRoom = {
   room_id?: string
   name?: string
@@ -59,6 +74,11 @@ export type MatrixRoom = {
   visibility?: MatrixRoomVisibility
 }
 
+/**
+ * Translate a Rocket.Chat room to a Matrix room
+ * @param rcRoom The Rocket.Chat room to convert
+ * @returns The Matrix room event body
+ */
 export function mapRoom(rcRoom: RcRoom): MatrixRoom {
   const room: MatrixRoom = {
     creation_content: {
@@ -101,6 +121,11 @@ export function mapRoom(rcRoom: RcRoom): MatrixRoom {
   return room
 }
 
+/**
+ * Return the ID of the room creator, depending on room type
+ * @param rcRoom The Rocket.Chat room object
+ * @returns The Rocket.Chat ID of the creator or empty string
+ */
 export function getCreator(rcRoom: RcRoom): string {
   if (rcRoom.u && rcRoom.u._id) {
     return rcRoom.u._id
@@ -114,6 +139,10 @@ export function getCreator(rcRoom: RcRoom): string {
   }
 }
 
+/**
+ * Wrapper function for membership creations for direct chats
+ * @param rcRoom The Rocket.Chat room object
+ */
 export async function createDirectChatMemberships(
   rcRoom: RcRoom
 ): Promise<void> {
@@ -128,6 +157,12 @@ export async function createDirectChatMemberships(
   }
 }
 
+/**
+ * Get user cretentials for Axios
+ * @param creatorId The Rocket.Chat ID of the room creator
+ * @returns A SessionOptions or empty object
+ * @deprecated This has a high similarity with other functions, it might be replaced
+ */
 export async function getCreatorSessionOptions(
   creatorId: string
 ): Promise<SessionOptions | object> {
@@ -143,19 +178,31 @@ export async function getCreatorSessionOptions(
   return {}
 }
 
+/**
+ * Send a request to Synapse, creating the room
+ * @param matrixRoom The Matrix room object to create
+ * @param creatorSessionOptions The credentials of the room creator
+ * @returns The Matrix room ID
+ */
 export async function registerRoom(
-  room: MatrixRoom,
+  matrixRoom: MatrixRoom,
   creatorSessionOptions: SessionOptions | object
 ): Promise<string> {
   return (
     await axios.post(
       '/_matrix/client/v3/createRoom',
-      room,
+      matrixRoom,
       creatorSessionOptions
     )
   ).data.room_id
 }
 
+/**
+ * Send events to Synapse, inviting users to a room. Already participating users will not cause problems.
+ * @param inviteeId The Matrix ID of the invited user
+ * @param roomId The Matrix ID of the room
+ * @param creatorSessionOptions The credentials of the room creator
+ */
 export async function inviteMember(
   inviteeId: string,
   roomId: string,
@@ -184,6 +231,11 @@ export async function inviteMember(
   }
 }
 
+/**
+ * Send events to Synapse, accepting an invitation to a room
+ * @param inviteeMapping The IDMapping of the invited user
+ * @param roomId The Matrix ID of the room
+ */
 export async function acceptInvitation(
   inviteeMapping: IdMapping,
   roomId: string
@@ -198,6 +250,14 @@ export async function acceptInvitation(
   )
 }
 
+/**
+ * Filter out the room creator and non-existent users.
+ * Users are non-existent, if they have no mapping, like when they are
+ * excluded or have been deleted.
+ * @param rcMemberIds An array of Rocket.Chat user IDs
+ * @param creatorId The Rocket.Chat user ID of the room creator
+ * @returns A filtered array of IdMappings
+ */
 export async function getFilteredMembers(
   rcMemberIds: string[],
   creatorId: string
@@ -212,19 +272,29 @@ export async function getFilteredMembers(
   return memberMappings
 }
 
+/**
+ * Save an ID mapping in the local database
+ * @param rcId Rocket.Chat room ID
+ * @param matrixId Matrix room ID
+ */
 export async function createMapping(
   rcId: string,
-  matrixRoom: MatrixRoom
+  matrixId: string
 ): Promise<void> {
   const roomMapping = new IdMapping()
   roomMapping.rcId = rcId
-  roomMapping.matrixId = matrixRoom.room_id
+  roomMapping.matrixId = matrixId
   roomMapping.type = entities[Entity.Rooms].mappingType
 
   await save(roomMapping)
   log.debug('Mapping added:', roomMapping)
 }
 
+/**
+ * Create a Matrix room from a Rocket.Chat room object and handle it's memberships
+ * @param rcRoom The Rocket.Chat room object
+ * @returns The Matrix room object, including it's ID
+ */
 export async function createRoom(rcRoom: RcRoom): Promise<MatrixRoom> {
   const room: MatrixRoom = mapRoom(rcRoom)
   const creatorId = getCreator(rcRoom)
@@ -239,6 +309,13 @@ export async function createRoom(rcRoom: RcRoom): Promise<MatrixRoom> {
   return room
 }
 
+/**
+ * Create memberships for a room
+ * @param rcRoomId The Rocket.Chat room ID
+ * @param room The Matrix room object
+ * @param creatorId The Rocket.Chat room creator ID
+ * @param creatorSessionOptions The credentials of the room creator
+ */
 async function handleMemberships(
   rcRoomId: string,
   room: MatrixRoom,
@@ -267,6 +344,12 @@ async function handleMemberships(
   )
 }
 
+/**
+ * Wrapper function to invite users to a room and make them join
+ * @param memberMapping The IdMapping of the user to join
+ * @param matrixRoomId The Matrix room ID
+ * @param creatorSessionOptions The credentials of the inviting user
+ */
 export async function addMember(
   memberMapping: IdMapping,
   matrixRoomId: string,
@@ -341,6 +424,10 @@ export async function executeAndHandleMissingMember(
   }
 }
 
+/**
+ * Handle a line of a Rocket.Chat room JSON export
+ * @param rcRoom A Rocket.Chat room object
+ */
 export async function handle(rcRoom: RcRoom): Promise<void> {
   log.info(`Parsing room ${rcRoom.name || 'with ID: ' + rcRoom._id}`)
 
@@ -349,6 +436,6 @@ export async function handle(rcRoom: RcRoom): Promise<void> {
     log.debug(`Mapping exists: ${rcRoom._id} -> ${matrixRoomId}`)
   } else {
     const matrixRoom = await createRoom(rcRoom)
-    await createMapping(rcRoom._id, matrixRoom)
+    await createMapping(rcRoom._id, matrixRoom.room_id!)
   }
 }
