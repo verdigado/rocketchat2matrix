@@ -1,10 +1,8 @@
-import { AxiosError } from 'axios'
 import * as emoji from 'node-emoji'
 import { Entity, entities } from '../Entities'
 import { IdMapping } from '../entity/IdMapping'
 import log from '../helpers/logger'
 import {
-  getMapping,
   getMappingByMatrixId,
   getMessageId,
   getRoomId,
@@ -14,7 +12,7 @@ import {
 } from '../helpers/storage'
 import { axios, formatUserSessionOptions } from '../helpers/synapse'
 import reactionKeys from '../reactions.json'
-import { addMember } from './rooms'
+import { executeAndHandleMissingMember } from './rooms'
 
 const applicationServiceToken = process.env.AS_TOKEN || ''
 if (!applicationServiceToken) {
@@ -131,16 +129,11 @@ export async function handleReactions(
         ).toString('base64')
         // lookup user access token
         const userMapping = await getUserMappingByName(rcUsername)
-        if (!userMapping) {
+        if (!userMapping || !userMapping.accessToken) {
           log.warn(
-            `Could not find user mapping for name: ${rcUsername}, skipping reaction ${reaction} for message ${matrixMessageId}`
+            `Could not find user mapping for name: ${rcUsername}, skipping reaction ${reactionKey} for message ${matrixMessageId}`
           )
           return
-        }
-        if (!userMapping.accessToken) {
-          throw new Error(
-            `User mapping for name ${rcUsername} has no access token`
-          )
         }
 
         const userSessionOptions = formatUserSessionOptions(
@@ -150,16 +143,18 @@ export async function handleReactions(
           `Adding reaction to message ${matrixMessageId} with symbol ${reactionKey} for user ${rcUsername}`
         )
         // put reaction
-        await axios.put(
-          `/_matrix/client/v3/rooms/${matrixRoomId}/send/m.reaction/${transactionId}`,
-          {
-            'm.relates_to': {
-              rel_type: 'm.annotation',
-              event_id: matrixMessageId,
-              key: reactionKey,
+        await executeAndHandleMissingMember(() =>
+          axios.put(
+            `/_matrix/client/v3/rooms/${matrixRoomId}/send/m.reaction/${transactionId}`,
+            {
+              'm.relates_to': {
+                rel_type: 'm.annotation',
+                event_id: matrixMessageId,
+                key: reactionKey,
+              },
             },
-          },
-          userSessionOptions
+            userSessionOptions
+          )
         )
       })
     )
@@ -255,9 +250,7 @@ export async function handle(rcMessage: RcMessage): Promise<void> {
     )
     return
   }
-
   const matrixMessage = mapMessage(rcMessage)
-
   const ts = new Date(rcMessage.ts.$date).valueOf()
 
   if (rcMessage.tmid) {
@@ -276,80 +269,31 @@ export async function handle(rcMessage: RcMessage): Promise<void> {
       }
     }
   }
+  await executeAndHandleMissingMember(() =>
+    createEventsAndMapping(matrixMessage, room_id, user_id, ts, rcMessage)
+  )
+}
 
-  try {
-    const event_id = await createMessage(
-      matrixMessage,
-      room_id,
-      user_id,
-      ts,
-      rcMessage._id
+async function createEventsAndMapping(
+  matrixMessage: MatrixMessage,
+  room_id: string,
+  user_id: string,
+  ts: number,
+  rcMessage: RcMessage
+): Promise<void> {
+  const event_id = await createMessage(
+    matrixMessage,
+    room_id,
+    user_id,
+    ts,
+    rcMessage._id
+  )
+  if (rcMessage.reactions) {
+    log.info(
+      `Parsing reactions for message ${rcMessage._id}`,
+      rcMessage.reactions
     )
-    if (rcMessage.reactions) {
-      log.info(
-        `Parsing reactions for message ${rcMessage._id}`,
-        rcMessage.reactions
-      )
-      await handleReactions(rcMessage.reactions, event_id, room_id)
-    }
-    await createMapping(rcMessage._id, event_id)
-  } catch (error) {
-    if (
-      error instanceof AxiosError &&
-      error.response &&
-      error.response.data.errcode === 'M_FORBIDDEN' &&
-      error.response.data.error === `User ${user_id} not in room ${room_id}`
-    ) {
-      log.info(error.response.data.error + ', adding.')
-
-      const userMapping = await getMapping(
-        rcMessage.u._id,
-        entities[Entity.Users].mappingType
-      )
-      if (!userMapping || !userMapping.matrixId || !userMapping.accessToken) {
-        log.warn(`Could not determine joining user, skipping.`, rcMessage)
-        return
-      }
-
-      // Get room creator session or use empty axios options
-      let userSessionOptions = {}
-      const roomCreatorId = (
-        await axios.get(`/_synapse/admin/v1/rooms/${room_id}`)
-      ).data.creator
-      if (!roomCreatorId) {
-        log.warn(
-          `Could not determine room creator for room ${room_id}, using admin credentials.`
-        )
-      } else {
-        const creatorMapping = await getMappingByMatrixId(roomCreatorId)
-        if (!creatorMapping?.accessToken) {
-          log.warn(`Could not access token for ${roomCreatorId}, skipping.`)
-          return
-        }
-        userSessionOptions = formatUserSessionOptions(
-          creatorMapping.accessToken
-        )
-      }
-
-      await addMember(userMapping, room_id, userSessionOptions)
-
-      const event_id = await createMessage(
-        matrixMessage,
-        room_id,
-        user_id,
-        ts,
-        rcMessage._id
-      )
-      if (rcMessage.reactions) {
-        log.info(
-          `Parsing reactions for message ${rcMessage._id}`,
-          rcMessage.reactions
-        )
-        await handleReactions(rcMessage.reactions, event_id, room_id)
-      }
-      await createMapping(rcMessage._id, event_id)
-    } else {
-      throw error
-    }
+    await handleReactions(rcMessage.reactions, event_id, room_id)
   }
+  await createMapping(rcMessage._id, event_id)
 }

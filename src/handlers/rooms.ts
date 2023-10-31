@@ -5,6 +5,7 @@ import log from '../helpers/logger'
 import {
   createMembership,
   getMapping,
+  getMappingByMatrixId,
   getMemberships,
   getRoomId,
   save,
@@ -277,6 +278,67 @@ export async function addMember(
     creatorSessionOptions
   )
   await acceptInvitation(memberMapping, matrixRoomId)
+}
+
+/**
+ * Execute the wrapped function, handling errors of members missing in rooms by adding them and repeating the function.
+ * @param fn The function to execute, preferably wrapped
+ * @returns void
+ * @throws Other errors than "User not in room"
+ * @example executeAndHandleMissingMember(() => myFunc('parameter1', 'parameter2'))
+ */
+export async function executeAndHandleMissingMember(
+  fn: () => Promise<void>
+): Promise<void> {
+  const regEx: RegExp =
+    /^User (?<matrixUserId>@.+) not in room (?<matrixRoomId>!.+)$/
+  try {
+    await fn()
+  } catch (error) {
+    if (
+      error instanceof AxiosError &&
+      error.response &&
+      error.response.data.errcode === 'M_FORBIDDEN' &&
+      error.response.data.error &&
+      regEx.test(error.response.data.error)
+    ) {
+      log.info(`${error.response.data.error}, adding.`)
+
+      const { matrixUserId, matrixRoomId } =
+        error.response.data.error.match(regEx).groups
+
+      const userMapping = await getMappingByMatrixId(matrixUserId)
+      if (!userMapping || !userMapping.matrixId || !userMapping.accessToken) {
+        log.warn(`Could not determine joining user ${matrixUserId}, skipping.`)
+        return
+      }
+
+      // Get room creator session or use empty axios options
+      let userSessionOptions = {}
+      const roomCreatorId = (
+        await axios.get(`/_synapse/admin/v1/rooms/${matrixRoomId}`)
+      ).data.creator
+      if (!roomCreatorId) {
+        log.warn(
+          `Could not determine room creator for room ${matrixRoomId}, using admin credentials.`
+        )
+      } else {
+        const creatorMapping = await getMappingByMatrixId(roomCreatorId)
+        if (!creatorMapping?.accessToken) {
+          log.warn(`Could not access token for ${roomCreatorId}, skipping.`)
+          return
+        }
+        userSessionOptions = formatUserSessionOptions(
+          creatorMapping.accessToken
+        )
+      }
+
+      await addMember(userMapping, matrixRoomId, userSessionOptions)
+      await fn()
+    } else {
+      throw error
+    }
+  }
 }
 
 export async function handle(rcRoom: RcRoom): Promise<void> {
