@@ -233,9 +233,9 @@ test('filtering members', async () => {
 })
 
 test('creating mapping', async () => {
-  await expect(
-    createMapping(rcPublicRoom._id, { ...mapRoom(rcPublicRoom), room_id })
-  ).resolves.toBe(undefined)
+  await expect(createMapping(rcPublicRoom._id, room_id)).resolves.toBe(
+    undefined
+  )
   expect(mockedStorage.save).toHaveBeenCalledWith({
     rcId: rcPublicRoom._id,
     matrixId: room_id,
