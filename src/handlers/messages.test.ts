@@ -8,14 +8,21 @@ import {
   RcMessage,
   createMessage,
   handle,
+  handleReactions,
   mapMessage,
 } from './messages'
+import log from '../helpers/logger'
+import { IdMapping } from '../entity/IdMapping'
+import { formatUserSessionOptions } from '../helpers/synapse'
 
 jest.mock('axios')
 const mockedAxios = axios as jest.Mocked<typeof axios>
 
 jest.mock('../helpers/storage')
 const mockedStorage = storage as jest.Mocked<typeof storage>
+
+jest.mock('../helpers/logger')
+const mockedLog = log as jest.Mocked<typeof log>
 
 const rcMessage: RcMessage = {
   _id: 'testMessage',
@@ -83,5 +90,64 @@ test('handling messages', async () => {
   expect(mockedStorage.getRoomId).toHaveBeenLastCalledWith('testRoom')
   expect(mockedStorage.getUserId).toHaveBeenLastCalledWith('testUser')
   expect(mockedStorage.getMessageId).toHaveBeenLastCalledWith('threadId')
+  mockedAxios.put.mockClear()
+})
+
+test('handling reactions', async () => {
+  mockedStorage.getUserMappingByName.mockImplementation(
+    async (username: string) => {
+      if (username === 'testuser') {
+        const idMapping = new IdMapping()
+        idMapping.rcId = 'rcId'
+        idMapping.matrixId = 'testuser'
+        idMapping.type = 0
+        idMapping.accessToken = 'testuser'
+        return idMapping
+      } else {
+        return null
+      }
+    }
+  )
+
+  await expect(
+    handleReactions(
+      {
+        ':+1:': { usernames: ['testuser', 'undefined'] }, // exists in reactions.json
+        ':biohazard:': { usernames: ['testuser'] }, // doesn't exist in reactions.json, but found by node-emoji
+        ':undefined:': { usernames: [] }, // doesn't exist, should cause a warning
+      },
+      'messageId',
+      'roomId'
+    )
+  ).resolves.toBe(undefined)
+
+  expect(mockedLog.warn).toHaveBeenCalledWith(
+    'Could not find user mapping for name: undefined, skipping reaction 👍 for message messageId'
+  )
+  expect(mockedLog.warn).toHaveBeenCalledWith(
+    'Could not find an emoji for :undefined: for message messageId, skipping'
+  )
+  expect(mockedAxios.put).toHaveBeenCalledWith(
+    '/_matrix/client/v3/rooms/roomId/send/m.reaction/bWVzc2FnZUlkADorMToAdGVzdHVzZXI=',
+    {
+      'm.relates_to': {
+        rel_type: 'm.annotation',
+        event_id: 'messageId',
+        key: '👍',
+      },
+    },
+    formatUserSessionOptions('testuser')
+  )
+  expect(mockedAxios.put).toHaveBeenCalledWith(
+    '/_matrix/client/v3/rooms/roomId/send/m.reaction/bWVzc2FnZUlkADpiaW9oYXphcmQ6AHRlc3R1c2Vy',
+    {
+      'm.relates_to': {
+        rel_type: 'm.annotation',
+        event_id: 'messageId',
+        key: '☣',
+      },
+    },
+    formatUserSessionOptions('testuser')
+  )
   mockedAxios.put.mockClear()
 })
