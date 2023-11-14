@@ -56,6 +56,11 @@ if (!adminUsername) {
   throw new Error(message)
 }
 
+/**
+ * Return a HMAC (Hash-Based Message Authentication Code) for a Matrix user, as requested by the Synapse user registration
+ * @param user Object containing the username, password, nonce and possibly admin status
+ * @returns The generated HMAC
+ */
 export function generateHmac(user: MatrixUser): string {
   const hmac = createHmac('sha1', registrationSharedSecret)
   hmac.write(
@@ -67,14 +72,27 @@ export function generateHmac(user: MatrixUser): string {
   return hmac.read().toString('hex')
 }
 
+/**
+ * Get a nonce (one-time user registration token) from Synapse
+ * @returns The user registration nonce
+ */
 async function getUserRegistrationNonce(): Promise<string> {
   return (await axios.get('/_synapse/admin/v1/register')).data.nonce
 }
 
+/**
+ * Register a user on the Synapse server
+ * @param user The Matrix user to register, including the nonce and hmac
+ * @returns The new user's session's access token
+ */
 async function registerUser(user: MatrixUser): Promise<AccessToken> {
   return (await axios.post('/_synapse/admin/v1/register', user)).data
 }
 
+/**
+ * Save a Rocket.Chat user's memberships for later handling
+ * @param rcUser The RC user
+ */
 async function parseUserMemberships(rcUser: RcUser): Promise<void> {
   await Promise.all(
     rcUser.__rooms.map(async (rcRoomId: string) => {
@@ -84,6 +102,11 @@ async function parseUserMemberships(rcUser: RcUser): Promise<void> {
   )
 }
 
+/**
+ * Check if a user is excluded by name, id or roles. Logs the reasons for exclusion.
+ * @param rcUser The RC user id
+ * @returns true, if user is excluded; otherwise false
+ */
 export function userIsExcluded(rcUser: RcUser): boolean {
   const reasons: string[] = []
   const excludedUsers = (process.env.EXCLUDED_USERS || '').split(',')
@@ -101,6 +124,11 @@ export function userIsExcluded(rcUser: RcUser): boolean {
   return false
 }
 
+/**
+ * Save an IDMapping to the database, mapping from Rocket.Chat to Matrix ID
+ * @param rcId The RC user ID
+ * @param matrixUser The Matrix user object, including ID and access token
+ */
 export async function createMapping(
   rcId: string,
   matrixUser: MatrixUser
@@ -115,6 +143,11 @@ export async function createMapping(
   log.debug('Mapping added:', mapping)
 }
 
+/**
+ * Map and parse a Rocket.Chat user to create a corresponding Matrix user in Synapse
+ * @param rcUser The RC user to create in Matrix
+ * @returns The created Matrix user
+ */
 export async function createUser(rcUser: RcUser): Promise<MatrixUser> {
   const user = mapUser(rcUser)
   const nonce = await getUserRegistrationNonce()
@@ -129,6 +162,10 @@ export async function createUser(rcUser: RcUser): Promise<MatrixUser> {
   return user
 }
 
+/**
+ * Check, map, parse and possibly create a Matrix user from a Rocket.Chat user, if it is not excluded and does not exist, yet
+ * @param rcUser The RC user to handle
+ */
 export async function handle(rcUser: RcUser): Promise<void> {
   log.info(`Parsing user: ${rcUser.name}: ${rcUser._id}`)
 

@@ -20,7 +20,10 @@ const applicationServiceToken = process.env.AS_TOKEN || ''
 
 log.info('rocketchat2matrix starts.')
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+/**
+ * Reads a file line by line and handles the lines parsed to JSON according to the expected type
+ * @param entity The Entity with it's file name and type definitions
+ */
 async function loadRcExport(entity: Entity) {
   const rl = new lineByLine(`./inputs/${entities[entity].filename}`)
 
@@ -46,6 +49,9 @@ async function loadRcExport(entity: Entity) {
   }
 }
 
+/**
+ * Remove all excess Matrix room members, which are not part of the Rocket.Chat room and not an admin
+ */
 async function removeExcessRoomMembers() {
   const roomMappings = await getAllMappingsByType(
     entities[Entity.Rooms].mappingType

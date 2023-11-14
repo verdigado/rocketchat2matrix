@@ -15,6 +15,11 @@ export interface SessionOptions {
 }
 
 export { default as axios } from 'axios'
+
+/**
+ * Check the Synapse admin credentials and log them
+ * @returns A Promise which resolves if the login succeds or rejects if it fails
+ */
 export const whoami = () =>
   new Promise<void>((resolve, reject) => {
     axios
@@ -29,10 +34,20 @@ export const whoami = () =>
       })
   })
 
+/**
+ * Format an access token to use in axios
+ * @param accessToken The HTTP Auth Bearer Token to format
+ * @returns A axios-compatible session option object to contain the credentials as Synapse expects them
+ */
 export function formatUserSessionOptions(accessToken: string): SessionOptions {
   return { headers: { Authorization: `Bearer ${accessToken}` } }
 }
 
+/**
+ * Lookup and format a user's access token to use in axios
+ * @param rcId The user's Rocket.Chat ID
+ * @returns A axios-compatible session option object to contain the credentials as Synapse expects them
+ */
 export async function getUserSessionOptions(
   rcId: string
 ): Promise<SessionOptions> {
