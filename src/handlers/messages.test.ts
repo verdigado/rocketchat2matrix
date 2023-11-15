@@ -112,7 +112,7 @@ test('handling reactions', async () => {
   await expect(
     handleReactions(
       {
-        ':+1:': { usernames: ['testuser', 'undefined'] }, // exists in reactions.json
+        ':+1:': { usernames: ['testuser', 'testuser', 'undefined'] }, // exists in reactions.json
         ':biohazard:': { usernames: ['testuser'] }, // doesn't exist in reactions.json, but found by node-emoji
         ':undefined:': { usernames: [] }, // doesn't exist, should cause a warning
       },
@@ -149,5 +149,6 @@ test('handling reactions', async () => {
     },
     formatUserSessionOptions('testuser')
   )
+  expect(mockedAxios.put).toHaveBeenCalledTimes(2)
   mockedAxios.put.mockClear()
 })

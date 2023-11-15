@@ -156,41 +156,42 @@ export async function handleReactions(
     }
 
     await Promise.all(
-      value.usernames.map(async (rcUsername: string) => {
-        // generate transaction id
-        const transactionId = Buffer.from(
-          [matrixMessageId, reaction, rcUsername].join('\0')
-        ).toString('base64')
-        // lookup user access token
-        const userMapping = await getUserMappingByName(rcUsername)
-        if (!userMapping || !userMapping.accessToken) {
-          log.warn(
-            `Could not find user mapping for name: ${rcUsername}, skipping reaction ${reactionKey} for message ${matrixMessageId}`
-          )
-          return
-        }
+      [...new Set(value.usernames)] // Deduplicate users
+        .map(async (rcUsername: string) => {
+          // generate transaction id
+          const transactionId = Buffer.from(
+            [matrixMessageId, reaction, rcUsername].join('\0')
+          ).toString('base64')
+          // lookup user access token
+          const userMapping = await getUserMappingByName(rcUsername)
+          if (!userMapping || !userMapping.accessToken) {
+            log.warn(
+              `Could not find user mapping for name: ${rcUsername}, skipping reaction ${reactionKey} for message ${matrixMessageId}`
+            )
+            return
+          }
 
-        const userSessionOptions = formatUserSessionOptions(
-          userMapping.accessToken
-        )
-        log.http(
-          `Adding reaction to message ${matrixMessageId} with symbol ${reactionKey} for user ${rcUsername}`
-        )
-        // put reaction
-        await executeAndHandleMissingMember(() =>
-          axios.put(
-            `/_matrix/client/v3/rooms/${matrixRoomId}/send/m.reaction/${transactionId}`,
-            {
-              'm.relates_to': {
-                rel_type: 'm.annotation',
-                event_id: matrixMessageId,
-                key: reactionKey,
-              },
-            },
-            userSessionOptions
+          const userSessionOptions = formatUserSessionOptions(
+            userMapping.accessToken
           )
-        )
-      })
+          log.http(
+            `Adding reaction to message ${matrixMessageId} with symbol ${reactionKey} for user ${rcUsername}`
+          )
+          // put reaction
+          await executeAndHandleMissingMember(() =>
+            axios.put(
+              `/_matrix/client/v3/rooms/${matrixRoomId}/send/m.reaction/${transactionId}`,
+              {
+                'm.relates_to': {
+                  rel_type: 'm.annotation',
+                  event_id: matrixMessageId,
+                  key: reactionKey,
+                },
+              },
+              userSessionOptions
+            )
+          )
+        })
     )
   }
 }
