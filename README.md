@@ -1,8 +1,13 @@
 # Rocket.Chat to Matrix Migration Script
 
-Drafts and more. **This is a work in progress!**
+Script to migrate users, channels and messages from Rocket.Chat communication platform to a Matrix Synapse server.
+It currently has beta quality and comes with no warranty.
 
-## Exporting RC data
+## Installation and Usage
+
+This setup is intended to migrate from Rocket.Chat to Synapse once, using mongo database dumps and a fresh Synapse instance. After the migration and some clean up, the Synapse might be used by users.
+
+### Exporting RC data
 
 Currently manually via mongodb. Run the following on the server:
 
@@ -14,7 +19,7 @@ mongoexport --collection=users --db=rocketchat --out=users.json
 
 Export them to `inputs/`
 
-## Configuring the Matrix Dev Server
+### Configuring the Matrix Dev Server
 
 Generate a Synapse homeserver config with the following command (you might change `my.matrix.host` for the actual server name, as it can't be changed afterwards):
 
@@ -53,7 +58,7 @@ Now edit `app-service.example.yaml` and save it at `files/app-service.yaml`, cha
 
 Copy over `.env.example` to `.env` and insert your values.
 
-## Starting the Matrix Dev Server
+### Starting the Matrix Dev Server
 
 Boot up the container and (for the first time starting the server or after resetting it manually) create an admin user:
 
@@ -75,17 +80,17 @@ curl --request POST \
 > src/config/synapse_access_token.json
 ```
 
-## Installing and Running the Script
+### Installing and Running the Script
 
 Install NodeJS and npm on your system, install the script's dependencies via `npm install`.
 
 To finally run the script, execute it via `npm start`.
 
-## Running Tests
+### Running Tests
 
 `npm test`.
 
-## Cleaning Up
+### Cleaning Up
 
 To clean up the Synapse server and local storage database, run either the convenience script `./reset.sh` or start with:
 
@@ -106,3 +111,16 @@ Then you can restart with an empty but quite equal server, following the instruc
   - So far only reactions used in our chats have been translated
   - Individual logos of *netzbegruenung* and *verdigado* have been replaced by a generic sunflower
   - Skin colour tones and genders have been ignored in the manual translation, using the neutral versions
+
+## Contributing
+
+This FOSS project is open for contributions. Just open an issue or a pull request.
+
+## License
+
+Licensed under AGPL v3 or newer.
+Copyright 2023 verdigado eG <support@verdigado.com>.
+
+## Support
+
+Contact <support@verdigado.com> to get an offer for personal or commercial support. Community support might be provided through the issue tracker.
