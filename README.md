@@ -111,6 +111,7 @@ Then you can restart with an empty but quite equal server, following the instruc
   - So far only reactions used in our chats have been translated
   - Individual logos of *netzbegruenung* and *verdigado* have been replaced by a generic sunflower
   - Skin colour tones and genders have been ignored in the manual translation, using the neutral versions
+- Discussions are not translated, yet, as they have a channel-like data structure which probably should be translated to threads
 
 ## Contributing
 
