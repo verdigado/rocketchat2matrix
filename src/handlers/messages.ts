@@ -152,7 +152,7 @@ export async function handleReactions(
       log.warn(
         `Could not find an emoji for ${reaction} for message ${matrixMessageId}, skipping`
       )
-      return
+      continue
     }
 
     await Promise.all(
