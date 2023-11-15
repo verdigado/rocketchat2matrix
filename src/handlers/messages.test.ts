@@ -115,6 +115,7 @@ test('handling reactions', async () => {
         ':+1:': { usernames: ['testuser', 'testuser', 'undefined'] }, // exists in reactions.json
         ':biohazard:': { usernames: ['testuser'] }, // doesn't exist in reactions.json, but found by node-emoji
         ':undefined:': { usernames: [] }, // doesn't exist, should cause a warning
+        ':thumbsup:': { usernames: ['testuser'] }, // should create the same request as with :+1:
       },
       'messageId',
       'roomId'
@@ -127,7 +128,7 @@ test('handling reactions', async () => {
   expect(mockedLog.warn).toHaveBeenCalledWith(
     'Could not find an emoji for :undefined: for message messageId, skipping'
   )
-  expect(mockedAxios.put).toHaveBeenCalledWith(
+  const thumbsupCall = [
     '/_matrix/client/v3/rooms/roomId/send/m.reaction/bWVzc2FnZUlkAPCfkY0AdGVzdHVzZXI=',
     {
       'm.relates_to': {
@@ -136,9 +137,11 @@ test('handling reactions', async () => {
         key: '👍',
       },
     },
-    formatUserSessionOptions('testuser')
-  )
-  expect(mockedAxios.put).toHaveBeenCalledWith(
+    formatUserSessionOptions('testuser'),
+  ]
+  expect(mockedAxios.put).toHaveBeenNthCalledWith(1, ...thumbsupCall)
+  expect(mockedAxios.put).toHaveBeenNthCalledWith(
+    2,
     '/_matrix/client/v3/rooms/roomId/send/m.reaction/bWVzc2FnZUlkAOKYowB0ZXN0dXNlcg==',
     {
       'm.relates_to': {
@@ -149,6 +152,7 @@ test('handling reactions', async () => {
     },
     formatUserSessionOptions('testuser')
   )
-  expect(mockedAxios.put).toHaveBeenCalledTimes(2)
+  expect(mockedAxios.put).toHaveBeenNthCalledWith(3, ...thumbsupCall)
+  expect(mockedAxios.put).toHaveBeenCalledTimes(3)
   mockedAxios.put.mockClear()
 })
