@@ -104,7 +104,7 @@ Then you can restart with an empty but quite equal server, following the instruc
 
 ## Design Decisions
 
-- Getting data from Rocket.Chat via (currently) manual mongodb export
+- Getting data from Rocket.Chat via manual mongodb export
 - Room to Channel conversion:
   - Read-only attributes of channels not converted to power levels due to complexity
 - Reactions:
@@ -112,6 +112,8 @@ Then you can restart with an empty but quite equal server, following the instruc
   - Individual logos of *netzbegruenung* and *verdigado* have been replaced by a generic sunflower
   - Skin colour tones and genders have been ignored in the manual translation, using the neutral versions
 - Discussions are not translated, yet, as they have a channel-like data structure which probably should be translated to threads
+- Several state change events are not translated, as the previous state is unknown, but the final state should be equal
+- If the root message of a thread is deleted or of a deleted user, the thread will be skipped
 
 ## Contributing
 
