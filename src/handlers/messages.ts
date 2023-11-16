@@ -13,6 +13,7 @@ import {
 import { axios, formatUserSessionOptions } from '../helpers/synapse'
 import reactionKeys from '../reactions.json'
 import { executeAndHandleMissingMember } from './rooms'
+import { AxiosError } from 'axios'
 
 const applicationServiceToken = process.env.AS_TOKEN || ''
 if (!applicationServiceToken) {
@@ -178,19 +179,33 @@ export async function handleReactions(
             `Adding reaction to message ${matrixMessageId} with symbol ${reactionKey} for user ${rcUsername}`
           )
           // put reaction
-          await executeAndHandleMissingMember(() =>
-            axios.put(
-              `/_matrix/client/v3/rooms/${matrixRoomId}/send/m.reaction/${transactionId}`,
-              {
-                'm.relates_to': {
-                  rel_type: 'm.annotation',
-                  event_id: matrixMessageId,
-                  key: reactionKey,
+          try {
+            await executeAndHandleMissingMember(() =>
+              axios.put(
+                `/_matrix/client/v3/rooms/${matrixRoomId}/send/m.reaction/${transactionId}`,
+                {
+                  'm.relates_to': {
+                    rel_type: 'm.annotation',
+                    event_id: matrixMessageId,
+                    key: reactionKey,
+                  },
                 },
-              },
-              userSessionOptions
+                userSessionOptions
+              )
             )
-          )
+          } catch (error) {
+            if (
+              error instanceof AxiosError &&
+              error.response &&
+              error.response.data.errcode === 'M_DUPLICATE_ANNOTATION'
+            ) {
+              log.debug(
+                `Duplicate reaction to message ${matrixMessageId} with symbol ${reactionKey} for user ${rcUsername}, skipping.`
+              )
+            } else {
+              throw error
+            }
+          }
         })
     )
   }
