@@ -62,7 +62,7 @@ async function removeExcessRoomMembers() {
 
   roomMappings.forEach(async (roomMapping) => {
     log.info(
-      `Checking memberships for room ${roomMapping.rcId} / ${roomMapping.matrixId}:`
+      `Checking memberships for room ${roomMapping.rcId} / ${roomMapping.matrixId}`
     )
     // get all memberships from db
     const rcMemberIds = await getMemberships(roomMapping.rcId)

@@ -56,7 +56,7 @@ app_service_config_files:
 
 Now edit `app-service.example.yaml` and save it at `files/app-service.yaml`, changing the tokens manually.
 
-Copy over `.env.example` to `.env` and insert your values.
+Copy over `.env.example` to `.env` and insert your values. Also export the admin name by `export ADMIN_USERNAME=yourValue`, where you replace `yourValue` with what you set in the file.
 
 ### Starting the Matrix Dev Server
 
@@ -65,10 +65,10 @@ Boot up the container and (for the first time starting the server or after reset
 ```shell
 docker-compose up -d
 # Wait for the Server to boot, then register an admin user
-docker-compose exec -it synapse register_new_matrix_user http://localhost:8008 -c /data/homeserver.yaml --admin --user verdiadmin --password verdiadmin
+docker-compose exec -it synapse register_new_matrix_user http://localhost:8008 -c /data/homeserver.yaml --admin --user $ADMIN_USERNAME --password $ADMIN_USERNAME
 ```
 
-Then you can access the homeserver in [Element Web](https://app.element.io/#/login) or the [local admin interface](http://localhost:8080) as `http://localhost:8008` with the `verdiadmin` as username AND password.
+Then you can access the homeserver in [Element Web](https://app.element.io/#/login) or the [local admin interface](http://localhost:8080) as `http://localhost:8008` with your `$ADMIN_USERNAME`/`yourValue` as username AND password.
 
 Store an access token for that user:
 
@@ -76,7 +76,7 @@ Store an access token for that user:
 curl --request POST \
   --url http://localhost:8008/_matrix/client/v3/login \
   --header 'Content-Type: application/json' \
-  --data '{"type": "m.login.password","user": "verdiadmin","password": "verdiadmin","device_id": "DEV"}' \
+  --data "{\"type\": \"m.login.password\",\"user\": \"$ADMIN_USERNAME\",\"password\": \"$ADMIN_USERNAME\",\"device_id\": \"DEV\"}" \
 > src/config/synapse_access_token.json
 ```
 
