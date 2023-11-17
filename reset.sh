@@ -38,6 +38,6 @@ curl --request POST \
 > src/config/synapse_access_token.json 2> /dev/null
 
 echo 'Removing log files'
-rm ./*.log
+rm -f ./*.log
 
 echo 'Done.'
