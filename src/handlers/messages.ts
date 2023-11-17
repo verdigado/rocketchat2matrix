@@ -162,7 +162,7 @@ export async function handleReactions(
           // generate transaction id
           const transactionId = Buffer.from(
             [matrixMessageId, reactionKey, rcUsername].join('\0')
-          ).toString('base64')
+          ).toString('base64url')
           // lookup user access token
           const userMapping = await getUserMappingByName(rcUsername)
           if (!userMapping || !userMapping.accessToken) {

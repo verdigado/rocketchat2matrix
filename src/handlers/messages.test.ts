@@ -129,7 +129,7 @@ test('handling reactions', async () => {
     'Could not find an emoji for :undefined: for message messageId, skipping'
   )
   const thumbsupCall = [
-    '/_matrix/client/v3/rooms/roomId/send/m.reaction/bWVzc2FnZUlkAPCfkY0AdGVzdHVzZXI=',
+    '/_matrix/client/v3/rooms/roomId/send/m.reaction/bWVzc2FnZUlkAPCfkY0AdGVzdHVzZXI',
     {
       'm.relates_to': {
         rel_type: 'm.annotation',
@@ -142,7 +142,7 @@ test('handling reactions', async () => {
   expect(mockedAxios.put).toHaveBeenNthCalledWith(1, ...thumbsupCall)
   expect(mockedAxios.put).toHaveBeenNthCalledWith(
     2,
-    '/_matrix/client/v3/rooms/roomId/send/m.reaction/bWVzc2FnZUlkAOKYowB0ZXN0dXNlcg==',
+    '/_matrix/client/v3/rooms/roomId/send/m.reaction/bWVzc2FnZUlkAOKYowB0ZXN0dXNlcg',
     {
       'm.relates_to': {
         rel_type: 'm.annotation',
