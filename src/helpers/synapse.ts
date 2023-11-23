@@ -3,7 +3,7 @@ import { access_token } from '../config/synapse_access_token.json'
 import log from './logger'
 import { getAccessToken } from './storage'
 
-axios.defaults.baseURL = 'http://localhost:8008'
+axios.defaults.baseURL = process.env.SYNAPSE_URL || 'http://localhost:8008'
 axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`
 axios.defaults.headers.post['Content-Type'] = 'application/json'
 
