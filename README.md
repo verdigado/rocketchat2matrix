@@ -82,7 +82,7 @@ curl --request POST \
 
 ### Installing and Running the Script
 
-Install NodeJS and npm on your system, install the script's dependencies via `npm install`.
+Install NodeJS >= v19 and npm on your system, install the script's dependencies via `npm install`.
 
 To finally run the script, execute it via `npm start`.
 

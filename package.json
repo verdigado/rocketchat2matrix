@@ -8,6 +8,9 @@
     "type": "git",
     "url": "https://git.verdigado.com/NB-Public/rocketchat2matrix"
   },
+  "engines" : {
+    "node" : ">=19.0.0"
+  },
   "lint-staged": {
     "**/*.ts": [
       "prettier --check",
