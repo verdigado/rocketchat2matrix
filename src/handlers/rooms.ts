@@ -14,7 +14,6 @@ import {
   SessionOptions,
   axios,
   formatUserSessionOptions,
-  getMatrixMembers,
   getUserSessionOptions,
 } from '../helpers/synapse'
 import { RcUser } from './users'
@@ -233,43 +232,8 @@ export async function inviteMember(
       error.response.data.error.includes(`not in room ${roomId}.`)
     ) {
       log.warn(
-        `Creator is not in room ${roomId}, retrying to invite ${inviteeId} as current members.`
+        `Creator is not in room ${roomId}, skipping invitation for ${inviteeId}.`
       )
-      const members = await getMatrixMembers(roomId)
-
-      for (const memberId of members) {
-        try {
-          await axios.post(
-            `/_matrix/client/v3/rooms/${roomId}/invite`,
-            {
-              user_id: inviteeId,
-            },
-            formatUserSessionOptions(
-              (await getMappingByMatrixId(memberId))?.accessToken || ''
-            )
-          )
-          log.info(
-            `User ${memberId} successfully invited ${inviteeId} to room ${roomId}`
-          )
-          break
-        } catch (error) {
-          if (
-            error instanceof AxiosError &&
-            error.response &&
-            error.response.data.errcode === 'M_FORBIDDEN' &&
-            error.response.data.error ===
-              "You don't have permission to invite users"
-          ) {
-            log.info(
-              `User ${memberId} has no invitation rights for room ${roomId}`
-            )
-          } else {
-            log.warn(
-              `Unknown problem while trying to invite as user ${memberId} to room ${roomId}`
-            )
-          }
-        }
-      }
     } else {
       throw error
     }
