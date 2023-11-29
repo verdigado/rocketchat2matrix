@@ -14,9 +14,12 @@ import {
   getMemberships,
   initStorage,
 } from './helpers/storage'
-import { axios, formatUserSessionOptions, whoami } from './helpers/synapse'
-
-const applicationServiceToken = process.env.AS_TOKEN || ''
+import {
+  axios,
+  formatUserSessionOptions,
+  getMatrixMembers,
+  whoami,
+} from './helpers/synapse'
 
 log.info('rocketchat2matrix starts.')
 
@@ -70,14 +73,10 @@ async function removeExcessRoomMembers() {
     const memberNames: string[] = memberMappings.map(
       (memberMapping) => memberMapping.matrixId || ''
     )
+
     // get each mx rooms' mx users
-    const actualMembers: string[] = Object.keys(
-      (
-        await axios.get(
-          `/_matrix/client/v3/rooms/${roomMapping.matrixId}/joined_members`,
-          formatUserSessionOptions(applicationServiceToken)
-        )
-      ).data.joined
+    const actualMembers: string[] = await getMatrixMembers(
+      roomMapping.matrixId || ''
     )
 
     // do action for any user in mx, but not in rc

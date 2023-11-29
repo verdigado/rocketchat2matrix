@@ -7,6 +7,8 @@ axios.defaults.baseURL = process.env.SYNAPSE_URL || 'http://localhost:8008'
 axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`
 axios.defaults.headers.post['Content-Type'] = 'application/json'
 
+const applicationServiceToken = process.env.AS_TOKEN || ''
+
 export interface SessionOptions {
   headers: {
     Authorization: string
@@ -18,7 +20,7 @@ export { default as axios } from 'axios'
 
 /**
  * Check the Synapse admin credentials and log them
- * @returns A Promise which resolves if the login succeds or rejects if it fails
+ * @returns A Promise which resolves if the login succeeds or rejects if it fails
  */
 export const whoami = () =>
   new Promise<void>((resolve, reject) => {
@@ -56,4 +58,22 @@ export async function getUserSessionOptions(
     throw new Error(`Could not retrieve access token for ID ${rcId}`)
   }
   return formatUserSessionOptions(accessToken)
+}
+
+/**
+ * Return a list of matrix users in a room
+ * @param matrixRoomId The Matrix ID of the room
+ * @returns Array of Matrix user IDs
+ */
+export async function getMatrixMembers(
+  matrixRoomId: string
+): Promise<string[]> {
+  return Object.keys(
+    (
+      await axios.get(
+        `/_matrix/client/v3/rooms/${matrixRoomId}/joined_members`,
+        formatUserSessionOptions(applicationServiceToken)
+      )
+    ).data.joined
+  )
 }
