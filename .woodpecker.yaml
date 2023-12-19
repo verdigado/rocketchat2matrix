@@ -1,5 +1,5 @@
 variables:
-  - &node_image 'node:20.9.0-alpine'
+  - &node_image 'node:20.10.0-alpine'
   - &create_synapse_access_token >-
     echo '{"user_id":"ci-dummy","access_token":"ci-dummy","home_server":"ci-dummy","device_id":"ci-dummy"}' > src/config/synapse_access_token.json
 
@@ -11,7 +11,7 @@ steps:
       - mdl .
 
   check-pre-commit:
-    image: python:3.12.0
+    image: python:3.12.1
     group: test
     environment:
       - SKIP=no-commit-to-branch # Ignore "don't commit to protected branch" check
