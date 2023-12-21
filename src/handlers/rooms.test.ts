@@ -99,6 +99,7 @@ test('mapping private rooms', () => {
     creation_content: {
       'm.federate': false,
     },
+    visibility: MatrixRoomVisibility.private,
   })
   expect(getCreator(rcPrivateRoom)).toBe(roomCreator._id)
 })

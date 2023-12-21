@@ -4,6 +4,7 @@ import { AxiosError } from 'axios'
 import lineByLine from 'n-readlines'
 import 'reflect-metadata'
 import { Entity, entities } from './Entities'
+import { handleDirectChats } from './handlers/directChats'
 import { handle as handleMessage } from './handlers/messages'
 import { getFilteredMembers, handle as handleRoom } from './handlers/rooms'
 import { handle as handleUser } from './handlers/users'
@@ -114,6 +115,7 @@ async function main() {
   try {
     await whoami()
     await initStorage()
+
     log.info('Parsing users')
     await loadRcExport(Entity.Users)
     log.info('Parsing rooms')
@@ -122,6 +124,8 @@ async function main() {
     await loadRcExport(Entity.Messages)
     log.info('Checking room memberships')
     await removeExcessRoomMembers()
+    log.info('Setting direct chats to be displayed as such for each user')
+    await handleDirectChats()
 
     log.info('Done.')
   } catch (error) {

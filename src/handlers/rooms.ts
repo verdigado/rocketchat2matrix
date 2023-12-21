@@ -102,6 +102,7 @@ export function mapRoom(rcRoom: RcRoom): MatrixRoom {
 
     case RcRoomTypes.private:
       room.preset = MatrixRoomPresets.private
+      room.visibility = MatrixRoomVisibility.private
       break
 
     case RcRoomTypes.live:
@@ -158,7 +159,7 @@ export async function createDirectChatMemberships(
 }
 
 /**
- * Get user cretentials for Axios
+ * Get user credentials for Axios
  * @param creatorId The Rocket.Chat ID of the room creator
  * @returns A SessionOptions or empty object
  * @deprecated This has a high similarity with other functions, it might be replaced
