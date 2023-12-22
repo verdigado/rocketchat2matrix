@@ -34,6 +34,8 @@ export const enum RcRoomTypes {
 export type RcRoom = {
   _id: string
   t: RcRoomTypes
+  usersCount?: number
+  lastMessage?: {[key: string]: {[key: string]: string}}
   uids?: string[]
   usernames?: string[]
   name?: string
@@ -91,6 +93,9 @@ export function mapRoom(rcRoom: RcRoom): MatrixRoom {
 
   switch (rcRoom.t) {
     case RcRoomTypes.direct:
+      if (rcRoom.usersCount == 1) {
+        rcRoom.lastMessage && (room.name = rcRoom.lastMessage.u.name)
+      }
       room.is_direct = true
       room.preset = MatrixRoomPresets.trusted
       break
@@ -130,7 +135,7 @@ export function mapRoom(rcRoom: RcRoom): MatrixRoom {
 export function getCreator(rcRoom: RcRoom): string {
   if (rcRoom.u && rcRoom.u._id) {
     return rcRoom.u._id
-  } else if (rcRoom.uids && rcRoom.uids.length > 1) {
+  } else if (rcRoom.uids && rcRoom.uids.length >= 1) {
     return rcRoom.uids[0]
   } else {
     log.warn(
