@@ -114,6 +114,7 @@ Then you can restart with an empty but quite equal server, following the instruc
 - Discussions are not translated, yet, as they have a channel-like data structure which probably should be translated to threads
 - Several state change events are not translated, as the previous state is unknown, but the final state should be equal
 - If the root message of a thread is deleted or of a deleted user, the thread will be skipped
+- The script follows a design to easily continue a migration if the script crashed by restarting it
 
 ## Contributing
 

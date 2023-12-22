@@ -8,6 +8,7 @@ import {
   getMatrixMembers,
 } from '../helpers/synapse'
 import { RcRoom, RcRoomTypes } from './rooms'
+import { AxiosError } from 'axios'
 
 export type DirectChats = { [key: string]: string[] }
 export type UserDirectChatMappings = {
@@ -25,6 +26,7 @@ export async function getDirectChats(): Promise<DirectChats> {
   const directChats: DirectChats = {}
   while ((line = rl.next())) {
     const room: RcRoom = JSON.parse(line.toString())
+
     if (room.t === RcRoomTypes.direct) {
       const matrixRoomId = await getRoomId(room._id)
 
@@ -80,7 +82,6 @@ export function parseDirectChats(
       }
     }
   }
-
   return result
 }
 
@@ -93,7 +94,7 @@ export async function setDirectChats(
   userDirectChatMappings: UserDirectChatMappings
 ) {
   log.info(
-    `Setting direct chats options for ${
+    `Setting direct chat settings for ${
       Object.keys(userDirectChatMappings).length
     } users`
   )
@@ -105,26 +106,45 @@ export async function setDirectChats(
     )
 
     // Check if direct chats are already set
-    const currentDirectChats = (
-      await axios.get(
-        `/_matrix/client/v3/user/${user}/account_data/m.direct`,
-        userSessionOptions
-      )
-    ).data
-
-    if (currentDirectChats && Object.keys(currentDirectChats).length > 0) {
-      if (JSON.stringify(currentDirectChats) !== JSON.stringify(chats)) {
-        // If chats are already set, but different, log the difference
-        log.debug(`User ${user} already has a different direct chat setting.`)
-        log.debug('Expected:', chats)
-        log.debug('Actual:', currentDirectChats)
-      } else {
-        // If chats are already set, but equal, log it
-        log.debug(
-          `User ${user} already has the expected direct chats configured, skipping.`
+    let settingExists = false
+    try {
+      const currentDirectChats = (
+        await axios.get(
+          `/_matrix/client/v3/user/${user}/account_data/m.direct`,
+          userSessionOptions
         )
+      ).data
+
+      settingExists =
+        currentDirectChats && Object.keys(currentDirectChats).length > 0
+
+      if (settingExists) {
+        if (JSON.stringify(currentDirectChats) !== JSON.stringify(chats)) {
+          // If chats are already set, but different, log the difference
+          log.debug(`User ${user} already has a different direct chat setting.`)
+          log.debug('Expected:', chats)
+          log.debug('Actual:', currentDirectChats)
+        } else {
+          // If chats are already set, but equal, log it
+          log.debug(
+            `User ${user} already has the expected direct chats configured, skipping.`
+          )
+        }
       }
-    } else {
+    } catch (error) {
+      // Catch errors if setting does not exist, yet
+      if (
+        !(
+          error instanceof AxiosError &&
+          error.response &&
+          error.response.data.errcode === 'M_NOT_FOUND'
+        )
+      ) {
+        throw error
+      }
+    }
+
+    if (!settingExists) {
       // Set direct chats if there are non set, yet
       await axios.put(
         `/_matrix/client/v3/user/${user}/account_data/m.direct`,
