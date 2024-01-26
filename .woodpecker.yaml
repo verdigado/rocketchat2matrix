@@ -6,13 +6,11 @@ variables:
 steps:
   lint-markdown:
     image: markdownlint/markdownlint:0.13.0
-    group: test
     commands:
       - mdl .
 
   check-pre-commit:
     image: python:3.12.1
-    group: test
     environment:
       - SKIP=no-commit-to-branch # Ignore "don't commit to protected branch" check
     commands:
@@ -26,24 +24,26 @@ steps:
 
   node-lint:
     image: *node_image
-    group: test
     commands:
       - npm run lint
+    depends_on: [ node-install-dependencies ]
 
   node-format:
     image: *node_image
-    group: test
     commands:
       - npm run format
+    depends_on: [ node-install-dependencies ]
 
   node-test:
     image: *node_image
     commands:
       - *create_synapse_access_token
       - npm test --ci
+    depends_on: [ node-install-dependencies ]
 
   node-compile:
     image: *node_image
     commands:
       - *create_synapse_access_token
       - npm run compile
+    depends_on: [ node-install-dependencies ]
