@@ -64,19 +64,25 @@ export function parseDirectChats(
       if (!result[user]) {
         result[user] = {}
       }
-
-      // Iterate over all other users in the same chat
-      for (const otherUser of users) {
-        // Skip the current user
-        if (otherUser !== user) {
-          // If the other user is not already in the result, add them
-          if (!result[user][otherUser]) {
-            result[user][otherUser] = []
-          }
-
-          // Add the current chat to the list of direct chats between the users
-          if (!result[user][otherUser].includes(chat)) {
-            result[user][otherUser].push(chat)
+      // If only one user in chat (self chatting), add him
+      if (users.length == 1) {
+        result[user][user] = []
+        if (!result[user][user].includes(chat)) {
+          result[user][user].push(chat)
+        }
+      } else {
+        // Iterate over all other users in the same chat
+        for (const otherUser of users) {
+          // Skip the current user
+          if (otherUser !== user) {
+            // If the other user is not already in the result, add them
+            if (!result[user][otherUser]) {
+              result[user][otherUser] = []
+            }
+            // Add the current chat to the list of direct chats between the users
+            if (!result[user][otherUser].includes(chat)) {
+              result[user][otherUser].push(chat)
+            }
           }
         }
       }
