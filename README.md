@@ -65,7 +65,7 @@ Boot up the container and (for the first time starting the server or after reset
 ```shell
 docker-compose up -d
 # Wait for the Server to boot, then register an admin user
-docker-compose exec -it synapse register_new_matrix_user http://localhost:8008 -c /data/homeserver.yaml --admin --user $ADMIN_USERNAME --password $ADMIN_PASSWORD
+docker-compose exec -it synapse register_new_matrix_user http://localhost:8008 --config /data/homeserver.yaml --admin --user $ADMIN_USERNAME --password $ADMIN_PASSWORD
 ```
 
 Then you can access the homeserver in [Element Web](https://app.element.io/#/login) or the [local admin interface](http://localhost:8080) as `http://localhost:8008` with your `$ADMIN_USERNAME`/`$ADMIN_PASSWORD` as username/password.
