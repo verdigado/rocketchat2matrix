@@ -27,7 +27,7 @@
     "test": "rm -rf dist/ && jest",
     "compile": "rm -rf dist/ && tsc",
     "start": "npm run compile && node dist/app.js",
-    "prepare": "husky install"
+    "prepare": "husky"
   },
   "version": "0.1.0",
   "devDependencies": {
