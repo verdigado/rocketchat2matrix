@@ -35,7 +35,7 @@ export type RcRoom = {
   _id: string
   t: RcRoomTypes
   usersCount?: number
-  lastMessage?: {[key: string]: {[key: string]: string}}
+  lastMessage?: { [key: string]: { [key: string]: string } }
   uids?: string[]
   usernames?: string[]
   name?: string
