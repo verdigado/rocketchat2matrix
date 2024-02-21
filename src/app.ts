@@ -5,6 +5,7 @@ import lineByLine from 'n-readlines'
 import 'reflect-metadata'
 import { Entity, entities } from './Entities'
 import { handleDirectChats } from './handlers/directChats'
+import { handlePinnedMessages } from './handlers/pinnedMessages'
 import { handle as handleMessage } from './handlers/messages'
 import { getFilteredMembers, handle as handleRoom } from './handlers/rooms'
 import { handle as handleUser } from './handlers/users'
@@ -126,6 +127,8 @@ async function main() {
     await removeExcessRoomMembers()
     log.info('Setting direct chats to be displayed as such for each user')
     await handleDirectChats()
+    log.info('Setting pinned messages in rooms')
+    await handlePinnedMessages()
 
     log.info('Done.')
   } catch (error) {
