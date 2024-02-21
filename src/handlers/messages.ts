@@ -53,6 +53,14 @@ export type RcMessage = {
       usernames: string[]
     }
   }
+  md?: {
+    type: string
+    language?: string
+    value: {
+      type: string
+      value: string
+    }[]
+  }[]
 }
 
 /**
@@ -70,6 +78,11 @@ export type MatrixMessage = {
       event_id: string
     }
   }
+  'm.mentions'?: {
+    user_ids: string[]
+  }
+  'format'?: string
+  'formatted_body'?: string
 }
 
 /**
@@ -215,6 +228,20 @@ export async function handleReactions(
   }
 }
 
+
+export function replaceFirstTripleBackticks(str: string, toreplace: string, replacement: string): string {
+  // Find the index of the first occurrence of triple backticks
+  const index = str.indexOf(toreplace);
+  if (index === -1) {
+    return str; // Return the original string if no triple backticks found
+  }
+
+  // Replace the first occurrence of triple backticks with the replacement string
+  const replacedString = str.slice(0, index) + replacement + str.slice(index + toreplace.length);
+
+  return replacedString;
+}
+
 /**
  * Handle a line of a Rocket.Chat message JSON export
  * @param rcMessage A Rocket.Chat message object
@@ -241,6 +268,7 @@ export async function handle(rcMessage: RcMessage): Promise<void> {
       case 'ru': // User removed by
       case 'ul': // User left
       case 'ult': // User left team
+      /*
       case 'removed-user-from-team': // Removed user from team
         log.info(
           `Message ${rcMessage._id} is of type ${rcMessage.t}, removing member ${rcMessage.msg} from room ${room_id}`
@@ -278,7 +306,7 @@ export async function handle(rcMessage: RcMessage): Promise<void> {
           formatUserSessionOptions(userMapping.accessToken)
         )
         return
-
+      */
       case 'uj': // User joined channel
       case 'ujt': // User joined team
       case 'ut': // User joined conversation
@@ -287,16 +315,16 @@ export async function handle(rcMessage: RcMessage): Promise<void> {
       case 'added-user-to-team': // Added user to team
       case 'r': // Room name changed
       case 'rm': // Message removed
-        log.warn(
-          `Message ${rcMessage._id} is of type ${rcMessage.t}, for which Rocket.Chat does not provide the initial state information, skipping.`
-        )
+        //log.warn(
+        //  `Message ${rcMessage._id} is of type ${rcMessage.t}, for which Rocket.Chat does not provide the initial state information, skipping.`
+        //)
         return
 
       case 'user-muted': // User muted by
       default:
-        log.warn(
-          `Message ${rcMessage._id} is of unhandled type ${rcMessage.t}, skipping.`
-        )
+        //log.warn(
+        //  `Message ${rcMessage._id} is of unhandled type ${rcMessage.t}, skipping.`
+        //)
         return
     }
   }
@@ -326,6 +354,50 @@ export async function handle(rcMessage: RcMessage): Promise<void> {
         },
       }
     }
+  }
+  if (rcMessage.md) {
+    for (const item of rcMessage.md) {
+      let formatted_body: string = matrixMessage.body;
+      if (item.type === 'CODE') {
+        formatted_body = replaceFirstTripleBackticks(formatted_body, '```\n','<pre><code>')
+        formatted_body = replaceFirstTripleBackticks(formatted_body, '\n```','</code></pre>\n')
+        log.warn(matrixMessage.body)
+        log.warn(formatted_body)
+        matrixMessage.formatted_body = formatted_body
+        matrixMessage.format = `org.matrix.custom.html`
+      } else if (item.type === 'PARAGRAPH') {
+        for (const val of item.value) {
+          if (val.type === 'LINK') {
+            log.warn(`inside link`)
+            const regex: RegExp = /\[ \]\(https:\/[^?]+\?msg=([^)]+)\)/;
+            const replacedStr: string = matrixMessage.body.replace(regex, "aa");
+            const match: RegExpExecArray | null = regex.exec(matrixMessage.body);
+            if (match && match[1]) {
+              const msgValue: string = match[1];
+              log.warn(msgValue); // Output: "rwq7eGNCD7b4LqKaR"
+            } else {
+              log.warn("No match found");
+            }
+          }
+        }
+      }
+    }
+  /*
+    const event_id = await getMessageId(rcMessage.tmid)
+    if (!event_id) {
+      log.warn(`Related message ${rcMessage.tmid} missing, skipping.`)
+      return
+    } else {
+      matrixMessage['m.relates_to'] = {
+        rel_type: 'm.thread',
+        event_id,
+        is_falling_back: true,
+        'm.in_reply_to': {
+          event_id,
+        },
+      }
+    }
+    */
   }
   await executeAndHandleMissingMember(() =>
     createEventsAndMapping(matrixMessage, room_id, user_id, ts, rcMessage)
