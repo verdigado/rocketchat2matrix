@@ -1,0 +1,92 @@
+{
+  "_id": "rocket.cat",
+  "createdAt": {
+    "$date": "2000-01-01T13:37:42.000Z"
+  },
+  "avatarOrigin": "local",
+  "name": "Rocket.Cat",
+  "username": "rocket.cat",
+  "status": "online",
+  "statusDefault": "online",
+  "utcOffset": 0,
+  "active": true,
+  "type": "bot",
+  "_updatedAt": {
+    "$date": "2000-01-01T21:42:00.000Z"
+  },
+  "roles": [
+    "bot"
+  ],
+  "__rooms": [
+    "GENERAL"
+  ]
+}
+{
+  "_id": "normalUserId",
+  "username": "normal_user",
+  "type": "user",
+  "__rooms": [
+    "GENERAL",
+    "invalidRoom",
+    "publicRoom",
+    "privateRoom",
+    "directChat",
+    "directChatDeleted",
+    "selfChat"
+  ],
+  "roles": [
+    "user"
+  ],
+  "name": "Just a normal user"
+}
+{
+  "_id": "userWithoutUsername",
+  "type": "user",
+  "__rooms": [
+    "GENERAL",
+    "invalidRoom",
+    "publicRoom"
+  ],
+  "roles": [
+    "user"
+  ],
+  "name": "I need special attention"
+}
+{
+  "_id": "excludedBot",
+  "username": "excludedBot",
+  "type": "bot",
+  "__rooms": [
+    "GENERAL"
+  ],
+  "roles": [
+    "user",
+    "bot"
+  ],
+  "name": "Excluded Bot"
+}
+{
+  "_id": "otherUserId",
+  "username": "other_user",
+  "type": "user",
+  "__rooms": [
+    "GENERAL",
+    "publicRoom",
+    "privateRoom",
+    "directChat"
+  ],
+  "roles": [
+    "user"
+  ],
+  "name": "Yet another user"
+}
+{
+  "_id": "thirdPerson",
+  "username": "thirdPerson",
+  "type": "user",
+  "__rooms": [],
+  "roles": [
+    "user"
+  ],
+  "name": "🥉rd Person"
+}
