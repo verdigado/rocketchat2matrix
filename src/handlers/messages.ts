@@ -111,7 +111,7 @@ export async function createMapping(
  * @param matrixMessage The Matrix event body to use
  * @param room_id The Matrix room, the message will be posted to
  * @param user_id The user the message will be posted by
- * @param ts The timestampt to which the message will be dated
+ * @param ts The timestamp to which the message will be dated
  * @param transactionId An unique identifier to distinguish identical messages
  * @returns The Matrix Message/event ID
  */
