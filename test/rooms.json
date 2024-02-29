@@ -1,0 +1,57 @@
+{
+  "_id": "GENERAL",
+  "ts": {
+    "$date": "2000-01-01T13:37:42.000Z"
+  },
+  "t": "c",
+  "name": "general",
+  "usernames": [],
+  "msgs": 99,
+  "usersCount": 99,
+  "default": true,
+  "_updatedAt": {
+    "$date": "2000-01-01T21:42:00.000Z"
+  }
+}
+{
+  "_id": "publicRoom",
+  "description": "Public House Room",
+  "name": "PubRoom",
+  "t": "c",
+  "u": {
+    "_id": "normalUserId"
+  }
+}
+{
+  "_id": "privateRoom",
+  "description": "Private Room",
+  "name": "priv",
+  "t": "p",
+  "u": {
+    "_id": "normalUserId"
+  }
+}
+{
+  "_id": "directChat",
+  "t": "d",
+  "usernames": [
+    "normal_user",
+    "other_user",
+    "excludedBot"
+  ],
+  "uids": [
+    "normalUserId",
+    "otherUserId",
+    "excludedBot"
+  ]
+}
+{
+  "_id": "selfChat",
+  "t": "d",
+  "usernames": [
+    "normal_user"
+  ],
+  "uids": [
+    "normalUserId"
+  ]
+}

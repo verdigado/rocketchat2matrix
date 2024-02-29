@@ -1,0 +1,161 @@
+{
+  "_id": "msgId001",
+  "rid": "GENERAL",
+  "msg": "Hello World!",
+  "ts": {
+    "$date": "2000-01-01T12:00:00.000Z"
+  },
+  "u": {
+    "_id": "normalUserId",
+    "username": "normal_user"
+  },
+  "reactions": {
+    ":tada:": {
+      "usernames": [
+        "normal_user",
+        "other_user"
+      ]
+    },
+    ":heart:": {
+      "usernames": [
+        "other_user"
+      ]
+    },
+    ":warning:": {
+      "usernames": [
+        "thirdPerson",
+        "deleted_user"
+      ]
+    }
+  },
+  "pinned": true,
+  "pinnedAt": {
+    "$date": "2001-01-01T12:00:00.000Z"
+  },
+  "pinnedBy": {
+    "_id": "normalUserId",
+    "username": "normal_user"
+  }
+}
+{
+  "_id": "msgThreadResponse",
+  "rid": "GENERAL",
+  "tmid": "msgId001",
+  "msg": "Hey",
+  "ts": {
+    "$date": "2000-01-01T12:03:00.000Z"
+  },
+  "u": {
+    "_id": "otherUserId",
+    "username": "other_user"
+  },
+  "reactions": {
+    ":wave:": {
+      "usernames": [
+        "normal_user"
+      ]
+    }
+  }
+}
+{
+  "_id": "deletedUserMsg",
+  "rid": "GENERAL",
+  "msg": "The author doesn't exist",
+  "ts": {
+    "$date": "2000-01-02T12:00:00.000Z"
+  },
+  "u": {
+    "_id": "deletedUserId",
+    "username": "deleted_user"
+  }
+}
+{
+  "_id": "excludedUserMsg",
+  "rid": "GENERAL",
+  "msg": "The author is excluded",
+  "ts": {
+    "$date": "2000-01-03T12:00:00.000Z"
+  },
+  "u": {
+    "_id": "excludedBot",
+    "username": "excludedBot"
+  }
+}
+{
+  "_id": "msgInDeletedThread",
+  "rid": "GENERAL",
+  "tmid": "deleted",
+  "msg": "Root message was deleted",
+  "ts": {
+    "$date": "2000-01-04T12:00:00.000Z"
+  },
+  "u": {
+    "_id": "normalUserId",
+    "username": "normal_user"
+  }
+}
+{
+  "_id": "msgInDeletedRoom",
+  "rid": "deleted",
+  "msg": "Room was deleted",
+  "ts": {
+    "$date": "2000-01-05T12:00:00.000Z"
+  },
+  "u": {
+    "_id": "normalUserId",
+    "username": "normal_user"
+  }
+}
+{
+  "_id": "userLeft",
+  "t": "ul",
+  "rid": "GENERAL",
+  "msg": "thirdPerson",
+  "ts": {
+    "$date": "2000-01-05T12:00:00.000Z"
+  },
+  "u": {
+    "_id": "thirdPerson",
+    "username": "thirdPerson"
+  }
+}
+{
+  "_id": "msgId002",
+  "rid": "GENERAL",
+  "msg": "Second message (more or less)",
+  "ts": {
+    "$date": "2000-01-10T12:00:00.000Z"
+  },
+  "u": {
+    "_id": "normalUserId",
+    "username": "normal_user"
+  },
+  "pinned": true,
+  "pinnedAt": {
+    "$date": "2000-01-10T14:00:00.000Z"
+  },
+  "pinnedBy": {
+    "_id": "normalUserId",
+    "username": "normal_user"
+  }
+}
+{
+  "_id": "msgId003",
+  "rid": "GENERAL",
+  "msg": "Third, but second pinned",
+  "ts": {
+    "$date": "2000-01-10T13:00:00.000Z"
+  },
+  "u": {
+    "_id": "normalUserId",
+    "username": "normal_user"
+  },
+  "pinned": true,
+  "pinnedAt": {
+    "$date": "2000-01-10T13:00:00.000Z"
+  },
+  "pinnedBy": {
+    "_id": "normalUserId",
+    "username": "normal_user"
+  }
+}

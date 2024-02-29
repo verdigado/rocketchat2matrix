@@ -1,6 +1,7 @@
 exclude: |
   (?x)
   .drawio$|
+  ^test/.*.json$|
   tsconfig.json$
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
