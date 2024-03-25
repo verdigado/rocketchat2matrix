@@ -1,11 +1,11 @@
 variables:
-  - &node_image 'node:20.11.0-alpine'
+  - &node_image 'node:20.11.0-alpine@sha256:2f46fd49c767554c089a5eb219115313b72748d8f62f5eccb58ef52bc36db4ad'
   - &create_synapse_access_token >-
     echo '{"user_id":"ci-dummy","access_token":"ci-dummy","home_server":"ci-dummy","device_id":"ci-dummy"}' > src/config/synapse_access_token.json
 
 steps:
   check-pre-commit:
-    image: git.verdigado.com/verdigado-images/container-pre-commit:latest
+    image: git.verdigado.com/verdigado-images/container-pre-commit:latest@sha256:922010dee7704ef69bc00ab16cc1629537fc5355c15ea3beebbf1a045f6e6ad8
     pull: true
     environment:
       - SKIP=no-commit-to-branch # Ignore "don't commit to protected branch" check
