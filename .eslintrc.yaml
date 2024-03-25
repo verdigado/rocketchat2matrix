@@ -3,11 +3,11 @@ env:
   node: true
   mocha: true
 parserOptions:
-  parser: "@typescript-eslint/parser"
+  parser: '@typescript-eslint/parser'
   ecmaVersion: 2022
   sourceType: module
 plugins:
-  - "@typescript-eslint"
+  - '@typescript-eslint'
   - prettier
 extends:
   - plugin:@typescript-eslint/recommended

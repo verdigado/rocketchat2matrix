@@ -27,7 +27,7 @@ Generate a Synapse homeserver config with the following command (you might chang
 docker-compose run --rm -e SYNAPSE_SERVER_NAME=my.matrix.host -e SYNAPSE_REPORT_STATS=no synapse generate
 ```
 
-To run the script without hitting rate limiting and activating an *Application Service* to send messages by different users with our desired timestamps, you MUST add the following options to the freshly generated `files/homeserver.yaml`. **Do not leave these in the production setup!**
+To run the script without hitting rate limiting and activating an _Application Service_ to send messages by different users with our desired timestamps, you MUST add the following options to the freshly generated `files/homeserver.yaml`. **Do not leave these in the production setup!**
 
 ```yaml
 rc_joins:
@@ -109,7 +109,7 @@ Then you can restart with an empty but quite equal server, following the instruc
   - Read-only attributes of channels not converted to power levels due to complexity
 - Reactions:
   - So far only reactions used in our chats have been translated
-  - Individual logos of *netzbegruenung* and *verdigado* have been replaced by a generic sunflower
+  - Individual logos of _netzbegruenung_ and _verdigado_ have been replaced by a generic sunflower
   - Skin colour tones and genders have been ignored in the manual translation, using the neutral versions
 - Discussions are not translated, yet, as they have a channel-like data structure which probably should be translated to threads
 - Several state change events are not translated, as the previous state is unknown, but the final state should be equal
