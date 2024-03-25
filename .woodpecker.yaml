@@ -4,17 +4,12 @@ variables:
     echo '{"user_id":"ci-dummy","access_token":"ci-dummy","home_server":"ci-dummy","device_id":"ci-dummy"}' > src/config/synapse_access_token.json
 
 steps:
-  lint-markdown:
-    image: markdownlint/markdownlint:0.13.0
-    commands:
-      - mdl .
-
   check-pre-commit:
-    image: python:3.12.1
+    image: git.verdigado.com/verdigado-images/container-pre-commit:latest
+    pull: true
     environment:
       - SKIP=no-commit-to-branch # Ignore "don't commit to protected branch" check
     commands:
-      - pip install pre-commit
       - pre-commit run --all-files
 
   node-install-dependencies:
@@ -26,24 +21,24 @@ steps:
     image: *node_image
     commands:
       - npm run lint
-    depends_on: [ node-install-dependencies ]
+    depends_on: [node-install-dependencies]
 
   node-format:
     image: *node_image
     commands:
       - npm run format
-    depends_on: [ node-install-dependencies ]
+    depends_on: [node-install-dependencies]
 
   node-test:
     image: *node_image
     commands:
       - *create_synapse_access_token
       - npm test --ci
-    depends_on: [ node-install-dependencies ]
+    depends_on: [node-install-dependencies]
 
   node-compile:
     image: *node_image
     commands:
       - *create_synapse_access_token
       - npm run compile
-    depends_on: [ node-install-dependencies ]
+    depends_on: [node-install-dependencies]
