@@ -17,3 +17,7 @@ repos:
       - id: mixed-line-ending
       - id: no-commit-to-branch
       - id: trailing-whitespace
+  - repo: https://github.com/markdownlint/markdownlint
+    rev: v0.13.0
+    hooks:
+      - id: markdownlint
