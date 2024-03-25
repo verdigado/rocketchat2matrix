@@ -1,7 +1,26 @@
 variables:
   - &node_image 'node:20.11.0-alpine@sha256:2f46fd49c767554c089a5eb219115313b72748d8f62f5eccb58ef52bc36db4ad'
-  - &create_synapse_access_token >-
-    echo '{"user_id":"ci-dummy","access_token":"ci-dummy","home_server":"ci-dummy","device_id":"ci-dummy"}' > src/config/synapse_access_token.json
+
+services:
+  synapse:
+    image: docker.io/matrixdotorg/synapse:v1.99.0
+    environment:
+      - SYNAPSE_CONFIG_PATH=/data/homeserver.yaml
+      - SYNAPSE_SERVER_NAME=synapse
+      - SYNAPSE_REPORT_STATS=no
+    ports:
+      - 8008
+    volumes:
+      - /mnt/synapse:/data
+    commands:
+      - rm -rf /data/*
+      - /start.py generate
+      - sed -ri '/^registration_shared_secret:.*$/d' /data/homeserver.yaml
+      - echo >> /data/homeserver.yaml
+      - cat test/homeserver_additions.yaml >> /data/homeserver.yaml
+      - cp app-service.example.yaml /data/app-service.yaml
+      - chmod +r /data/*.signing.key
+      - /start.py
 
 steps:
   check-pre-commit:
@@ -11,10 +30,17 @@ steps:
     commands:
       - pre-commit run --all-files
 
+  synapse-register-admin:
+    image: docker.io/matrixdotorg/synapse:v1.99.0
+    commands:
+      - timeout 120 sh -c 'while !(( register_new_matrix_user http://synapse:8008 --shared-secret testrun --admin --user admin --password admin 2> /dev/null )); do sleep 1; done;'
+      - 'curl --request POST --url http://synapse:8008/_matrix/client/v3/login --header "Content-Type: application/json" --data "{\"type\": \"m.login.password\",\"user\": \"admin\",\"password\": \"admin\",\"device_id\": \"DEV\"}" | tee src/config/synapse_access_token.json'
+
   node-install-dependencies:
     image: *node_image
     commands:
       - npm clean-install
+    depends_on: [check-pre-commit]
 
   node-lint:
     image: *node_image
@@ -28,16 +54,30 @@ steps:
       - npm run format
     depends_on: [node-install-dependencies]
 
+  node-test-e2e:
+    image: *node_image
+    environment:
+      - REGISTRATION_SHARED_SECRET=testrun
+      - AS_TOKEN=30c05ae90a248a4188e620216fa72e349803310ec83e2a77b34fe90be6081f46
+      - SYNAPSE_URL=http://synapse:8008
+      - ADMIN_USERNAME=admin
+      - ADMIN_PASSWORD=admin
+    commands:
+      - mkdir -p inputs
+      - npx node-jq --compact-output '.' test/messages.json > inputs/rocketchat_message.json
+      - npx node-jq --compact-output '.' test/rooms.json > inputs/rocketchat_room.json
+      - npx node-jq --compact-output '.' test/users.json > inputs/users.json
+      - npm start
+    depends_on: [node-install-dependencies, synapse-register-admin]
+
   node-test:
     image: *node_image
     commands:
-      - *create_synapse_access_token
       - npm test --ci
     depends_on: [node-install-dependencies]
 
   node-compile:
     image: *node_image
     commands:
-      - *create_synapse_access_token
       - npm run compile
     depends_on: [node-install-dependencies]

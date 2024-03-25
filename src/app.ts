@@ -21,6 +21,7 @@ import {
   getMatrixMembers,
   whoami,
 } from './helpers/synapse'
+import { exit } from 'node:process'
 
 log.info('rocketchat2matrix starts.')
 
@@ -136,6 +137,7 @@ async function main() {
     } else {
       log.error(`Encountered an error while booting up: ${error}`, error)
     }
+    exit(1)
   }
 }
 
