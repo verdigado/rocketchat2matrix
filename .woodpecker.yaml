@@ -6,7 +6,6 @@ variables:
 steps:
   check-pre-commit:
     image: git.verdigado.com/verdigado-images/container-pre-commit:latest@sha256:922010dee7704ef69bc00ab16cc1629537fc5355c15ea3beebbf1a045f6e6ad8
-    pull: true
     environment:
       - SKIP=no-commit-to-branch # Ignore "don't commit to protected branch" check
     commands:
