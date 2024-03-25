@@ -18,8 +18,8 @@
     ]
   },
   "scripts": {
-    "format": "prettier 'src/**/*.ts' --check",
-    "format-fix": "prettier 'src/**/*.ts' --write",
+    "format": "prettier . --check --ignore-unknown",
+    "format-fix": "prettier . --write --ignore-unknown",
     "lint": "eslint src/ --ext .ts --max-warnings 0",
     "lint-fix": "eslint src/ --fix --ext .ts",
     "prefix": "npm run format-fix",

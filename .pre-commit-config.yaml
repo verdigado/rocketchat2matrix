@@ -17,7 +17,21 @@ repos:
       - id: mixed-line-ending
       - id: no-commit-to-branch
       - id: trailing-whitespace
+
   - repo: https://github.com/markdownlint/markdownlint
     rev: v0.13.0
     hooks:
       - id: markdownlint
+
+  - repo: local
+    hooks:
+      - id: prettier # Copied from https://github.com/pre-commit/mirrors-prettier/ instead of referencing it to not rely on their published Prettier versions
+        name: Prettier
+        description: ''
+        entry: prettier --write --ignore-unknown
+        language: node
+        'types': [text]
+        args: []
+        require_serial: false
+        additional_dependencies: ['prettier@3'] # Renovate can't parse this, either. Unspecific to prevent local installs, when global installations are available
+        minimum_pre_commit_version: '0'
