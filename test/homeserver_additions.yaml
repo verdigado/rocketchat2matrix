@@ -1,0 +1,31 @@
+registration_shared_secret: testrun
+
+rc_login:
+  address:
+    per_second: 1024
+    burst_count: 2048
+  account:
+    per_second: 1024
+    burst_count: 2048
+rc_joins:
+  local:
+    per_second: 1024
+    burst_count: 2048
+rc_joins_per_room:
+  per_second: 1024
+  burst_count: 2048
+rc_message:
+  per_second: 1024
+  burst_count: 2048
+rc_invites:
+  per_room:
+    per_second: 1024
+    burst_count: 2048
+  per_user:
+    per_second: 1024
+    burst_count: 2048
+  per_issuer:
+    per_second: 1024
+    burst_count: 2048
+app_service_config_files:
+  - /data/app-service.yaml
