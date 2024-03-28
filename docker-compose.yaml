@@ -2,7 +2,7 @@ version: '3'
 
 services:
   synapse:
-    image: docker.io/matrixdotorg/synapse:v1.99.0@sha256:d67f79582f3dc053dfadb15c4c78b8f2623090da3c19fe60d3b6e66c65a7ca6f
+    image: docker.io/matrixdotorg/synapse:v1.103.0@sha256:b7fde4f614b5d97952bc998281a876dfacaeee993f5e31081eeeac1c7ceb73f5
     # Since synapse does not retry to connect to the database, restart upon
     # failure
     restart: 'no'
@@ -42,7 +42,7 @@ services:
   synapse-admin:
     container_name: synapse-admin
     hostname: synapse-admin
-    image: awesometechnologies/synapse-admin:0.8.7@sha256:6193a821f0e5c74a06401c0d77a45a7ea1e3bec7e43f6233f78ee2c753599960
+    image: awesometechnologies/synapse-admin:0.9.1@sha256:92b9346e514dd2cbde0c3d89f0f3120c16bd832dab1bfa232ba380f6a9499e4d
     ports:
       - '8080:80'
     restart: 'no'
