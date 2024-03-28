@@ -40,6 +40,18 @@
   "name": "Just a normal user"
 }
 {
+  "_id": "emailUser",
+  "username": "user@example.org",
+  "type": "user",
+  "__rooms": [
+    "GENERAL"
+  ],
+  "roles": [
+    "user"
+  ],
+  "name": "Emil Email"
+}
+{
   "_id": "userWithoutUsername",
   "type": "user",
   "__rooms": [
