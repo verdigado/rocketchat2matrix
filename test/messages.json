@@ -122,7 +122,7 @@
 {
   "_id": "msgId002",
   "rid": "GENERAL",
-  "msg": "Second message (more or less)",
+  "msg": "Second message (more or less), but 3rd pinned",
   "ts": {
     "$date": "2000-01-10T12:00:00.000Z"
   },

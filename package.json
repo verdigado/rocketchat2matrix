@@ -26,7 +26,6 @@
     "fix": "npm run lint-fix",
     "test": "rm -rf dist/ && jest",
     "compile": "rm -rf dist/ && tsc",
-    "jq-test-users": "jq --compact-output '.' test/users.json",
     "start": "npm run compile && node dist/app.js",
     "prepare": "husky"
   },

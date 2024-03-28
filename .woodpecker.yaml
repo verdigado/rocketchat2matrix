@@ -48,12 +48,6 @@ steps:
       - npm run lint
     depends_on: [node-install-dependencies]
 
-  node-format:
-    image: *node_image
-    commands:
-      - npm run format
-    depends_on: [node-install-dependencies]
-
   node-test-e2e:
     image: *node_image
     environment:
@@ -70,7 +64,7 @@ steps:
       - npm start
     depends_on: [node-install-dependencies, synapse-register-admin]
 
-  node-test:
+  node-test-units:
     image: *node_image
     commands:
       - npm test --ci
