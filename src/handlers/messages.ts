@@ -42,6 +42,10 @@ export type RcMessage = {
   }
   // md?: any // The message's content in a markdown format.
   pinned?: boolean
+  pinnedBy?: {
+    _id?: string
+    username?: string
+  }
   drid?: string // The direct room id (if belongs to a direct room).
   // attachments?: any[] // An array of attachment objects, available only when the message has at least one attachment.
   reactions?: {
