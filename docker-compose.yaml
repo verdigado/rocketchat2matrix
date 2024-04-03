@@ -2,7 +2,7 @@ version: '3'
 
 services:
   synapse:
-    image: docker.io/matrixdotorg/synapse:v1.103.0@sha256:b7fde4f614b5d97952bc998281a876dfacaeee993f5e31081eeeac1c7ceb73f5
+    image: docker.io/matrixdotorg/synapse:v1.104.0@sha256:ef4c18dae2d1658b9eb76188b0ba196bd3997e472c0ecde37fc0ce537bc399f4
     # Since synapse does not retry to connect to the database, restart upon
     # failure
     restart: 'no'
