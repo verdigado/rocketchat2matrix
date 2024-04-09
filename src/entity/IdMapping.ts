@@ -8,6 +8,9 @@ export class IdMapping {
   @Column()
   matrixId?: string // Matrix ID of the entity
 
+  @Column({ nullable: true })
+  rcUsername?: string // rcUsername of the entity
+
   @Column('integer')
   type!: number // Type of the entity; 0 = user, 1 = room, 2 = message
 

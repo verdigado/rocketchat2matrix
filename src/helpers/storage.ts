@@ -58,14 +58,14 @@ export function getMappingByMatrixId(
 
 /**
  * Search for a user IdMapping by its name
- * @param username The Matrix or Rocket.Chat username to look up
+ * @param username The Rocket.Chat username to look up
  * @returns One found IdMapping or null
  */
 export function getUserMappingByName(
   username: string
 ): Promise<IdMapping | null> {
   return AppDataSource.manager.findOneBy(IdMapping, {
-    matrixId: ILike(`@${username.toLowerCase()}:%`),
+    rcUsername: ILike(`${username.toLowerCase()}`),
     type: entities[Entity.Users].mappingType,
   })
 }

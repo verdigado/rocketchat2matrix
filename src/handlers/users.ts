@@ -130,12 +130,13 @@ export function userIsExcluded(rcUser: RcUser): boolean {
  * @param matrixUser The Matrix user object, including ID and access token
  */
 export async function createMapping(
-  rcId: string,
+  rcUser: RcUser,
   matrixUser: MatrixUser
 ): Promise<void> {
   const mapping = new IdMapping()
-  mapping.rcId = rcId
+  mapping.rcId = rcUser._id
   mapping.matrixId = matrixUser.user_id
+  mapping.rcUsername = rcUser.username
   mapping.type = entities[Entity.Users].mappingType
   mapping.accessToken = matrixUser.access_token
 
@@ -167,7 +168,7 @@ export async function createUser(rcUser: RcUser): Promise<MatrixUser> {
  * @param rcUser The RC user to handle
  */
 export async function handle(rcUser: RcUser): Promise<void> {
-  log.info(`Parsing user: ${rcUser.name}: ${rcUser._id}`)
+  log.info(`Parsing user: ${rcUser.name}: ${rcUser._id} ${rcUser.username}`)
 
   const matrixId = await getUserId(rcUser._id)
   if (matrixId) {
@@ -177,10 +178,10 @@ export async function handle(rcUser: RcUser): Promise<void> {
       log.info(
         `User ${rcUser.username} is defined as admin in ENV, mapping as such`
       )
-      await createMapping(rcUser._id, adminAccessToken as unknown as MatrixUser)
+      await createMapping(rcUser, adminAccessToken as unknown as MatrixUser)
     } else if (!userIsExcluded(rcUser)) {
       const matrixUser = await createUser(rcUser)
-      await createMapping(rcUser._id, matrixUser)
+      await createMapping(rcUser, matrixUser)
     }
   }
 }
