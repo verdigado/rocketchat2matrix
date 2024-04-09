@@ -120,6 +120,17 @@ Then you can restart with an empty but quite equal server, following the instruc
 
 This FOSS project is open for contributions. Just open an issue or a pull request.
 
+### Hint: pre-commit
+
+To keep the code clean and properly formatted, install and use [`pre-commit`](https://pre-commit.com/).
+
+- Install it via `pip install pre-commit`
+- Install the repo's pre-commit hooks for yourself: `pre-commit install`.
+
+  Now it will run whenever you commit something
+
+- Run pre-commit against all files: `pre-commit run --all-files`
+
 ## License
 
 Licensed under AGPL v3 or newer.
