@@ -9,5 +9,8 @@
     "sqlite",
     "typeorm",
     "verdiadmin"
-  ]
+  ],
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "never"
+  }
 }
