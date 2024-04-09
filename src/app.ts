@@ -124,12 +124,12 @@ async function main() {
     await loadRcExport(Entity.Rooms)
     log.info('Parsing messages')
     await loadRcExport(Entity.Messages)
-    log.info('Checking room memberships')
-    await removeExcessRoomMembers()
     log.info('Setting direct chats to be displayed as such for each user')
     await handleDirectChats()
     log.info('Setting pinned messages in rooms')
     await handlePinnedMessages()
+    log.info('Checking room memberships')
+    await removeExcessRoomMembers()
 
     log.info('Done.')
   } catch (error) {

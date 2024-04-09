@@ -10,20 +10,13 @@ import { axios, formatUserSessionOptions } from '../helpers/synapse'
 import { RcMessage } from './messages'
 
 export type PinnedMessages = { [key: string]: string[] }
-export type UserForRoom = { [key: string]: string }
-export type PromiseResult = {
-  pinnedMessages: PinnedMessages
-  userForRoom: UserForRoom
-}
 
 /**
  * Reads the input file for messages, gets the mappings of each pinned message and returns this collection
- * It also returns a dict to know which user needs to connect to pinned messages in a room
- * @returns A collection with: PinnedMessages collection with messages IDs of rooms & Dict of rooms: users
+ * @returns A PinnedMessages collection with messages IDs of rooms
  */
-export async function getPinnedMessages(): Promise<PromiseResult> {
+export async function getPinnedMessages(): Promise<PinnedMessages> {
   const pinnedMessages: PinnedMessages = {}
-  const userForRoom: UserForRoom = {}
   const rl = new lineByLine(`./inputs/${entities.messages.filename}`)
   let line: false | Buffer
   while ((line = rl.next())) {
@@ -35,14 +28,7 @@ export async function getPinnedMessages(): Promise<PromiseResult> {
         log.warn(`Room ${message.rid} has no mapping, thus no pinned messages.`)
         continue
       }
-      if (message.pinnedBy) {
-        log.info(
-          `User ${message.pinnedBy.username} has pinned message id ${matrixMessageId} in room ${matrixRoomId}`
-        )
-        if (message.pinnedBy._id) {
-          userForRoom[matrixRoomId] = message.pinnedBy._id
-        }
-      }
+
       if (!pinnedMessages[matrixRoomId]) {
         pinnedMessages[matrixRoomId] = []
       }
@@ -51,20 +37,17 @@ export async function getPinnedMessages(): Promise<PromiseResult> {
       }
     }
   }
-  const promiseResult: PromiseResult = { pinnedMessages, userForRoom }
-  return promiseResult
+  return pinnedMessages
 }
 
 /**
  * Sets the m.room.pinned_events settings for rooms.
  * @param pinnedMessages An object containing rooms and their pinned message, to be set in synapse
  */
-export async function setPinnedMessages(promiseResult: PromiseResult) {
-  const { userForRoom } = promiseResult
-
-  for (const room in userForRoom) {
-    log.info(`User ${userForRoom[room]} will pinn all messages in room ${room}`)
-
+export async function setPinnedMessages(
+  pinnedMessages: PinnedMessages
+): Promise<void> {
+  for (const room in pinnedMessages) {
     // Get room creator session or use empty axios options
     let userSessionOptions = {}
     const roomCreatorId = (await axios.get(`/_synapse/admin/v1/rooms/${room}`))
@@ -76,18 +59,29 @@ export async function setPinnedMessages(promiseResult: PromiseResult) {
     } else {
       const creatorMapping = await getMappingByMatrixId(roomCreatorId)
       if (!creatorMapping?.accessToken) {
-        log.warn(`Could not access token for ${roomCreatorId}, skipping.`)
-        return
+        log.warn(
+          `Could not access token for ${roomCreatorId}, using admin credentials.`
+        )
+      } else {
+        log.info(
+          `User ${creatorMapping.matrixId} will pin all messages in room ${room}`
+        )
+        userSessionOptions = formatUserSessionOptions(
+          creatorMapping.accessToken
+        )
       }
-      userSessionOptions = formatUserSessionOptions(creatorMapping.accessToken)
     }
 
-    //const userSessionOptions = await getUserSessionOptions(userForRoom[room]) || ''
-    const listPinnedMessages = { pinned: promiseResult.pinnedMessages[room] }
-    await axios.put(
-      `/_matrix/client/v3/rooms/${room}/state/m.room.pinned_events/`,
-      listPinnedMessages,
-      userSessionOptions
+    const listPinnedMessages = { pinned: pinnedMessages[room] }
+    log.http(
+      `Pin messages in room ${room}`,
+      (
+        await axios.put(
+          `/_matrix/client/v3/rooms/${room}/state/m.room.pinned_events/`,
+          listPinnedMessages,
+          userSessionOptions
+        )
+      ).data
     )
   }
 }
