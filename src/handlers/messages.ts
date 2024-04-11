@@ -53,6 +53,7 @@ export type RcMessage = {
       usernames: string[]
     }
   }
+  md?: string
 }
 
 /**
