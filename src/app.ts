@@ -6,6 +6,7 @@ import 'reflect-metadata'
 import { Entity, entities } from './Entities'
 import { handleDirectChats } from './handlers/directChats'
 import { handlePinnedMessages } from './handlers/pinnedMessages'
+import { handleMarkAllAsRead } from './handlers/markAllAsRead'
 import { handle as handleMessage } from './handlers/messages'
 import { getFilteredMembers, handle as handleRoom } from './handlers/rooms'
 import { handle as handleUser } from './handlers/users'
@@ -128,6 +129,8 @@ async function main() {
     await handleDirectChats()
     log.info('Setting pinned messages in rooms')
     await handlePinnedMessages()
+    log.info('Mark all messages as read in rooms')
+    await handleMarkAllAsRead()
     log.info('Checking room memberships')
     await removeExcessRoomMembers()
 
