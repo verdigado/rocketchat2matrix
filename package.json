@@ -55,6 +55,7 @@
     "dotenv": "^16.4.5",
     "n-readlines": "^1.0.1",
     "node-emoji": "^2.1.3",
+    "p-limit": "^3.0.0",
     "reflect-metadata": "^0.2.2",
     "showdown": "^2.1.0",
     "sqlite3": "^5.1.7",

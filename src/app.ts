@@ -3,6 +3,7 @@ dotenv.config()
 import { AxiosError } from 'axios'
 import lineByLine from 'n-readlines'
 import { exit } from 'node:process'
+import pLimit from 'p-limit'
 import 'reflect-metadata'
 import { Entity, entities } from './Entities'
 import { handleDirectChats } from './handlers/directChats'
@@ -24,6 +25,10 @@ log.info('rocketchat2matrix starts.')
 async function loadRcExport(entity: Entity) {
   const rl = new lineByLine(`./inputs/${entities[entity].filename}`)
 
+  const limit = pLimit(parseInt(process.env.CONCURRENCY_LIMIT || '50'))
+  const queue = []
+  const threadedMessagesQueue = []
+
   let line: false | Buffer
   while ((line = rl.next())) {
     const item = JSON.parse(line.toString())
@@ -33,17 +38,25 @@ async function loadRcExport(entity: Entity) {
         break
 
       case Entity.Rooms:
-        await handleRoom(item)
+        queue.push(limit(() => handleRoom(item)))
         break
 
       case Entity.Messages:
-        await handleMessage(item)
+        if (item.tmid) {
+          threadedMessagesQueue.push(limit(() => handleMessage(item)))
+        } else {
+          queue.push(limit(() => handleMessage(item)))
+        }
         break
 
       default:
         throw new Error(`Unhandled Entity: ${entity}`)
     }
   }
+
+  await Promise.all(queue)
+  log.info(`Handling ${threadedMessagesQueue.length} threaded messages`)
+  await Promise.all(threadedMessagesQueue)
 }
 
 async function main() {
