@@ -1,9 +1,9 @@
 variables:
-  - &node_image 'node:20.12.2-alpine@sha256:ec0c413b1d84f3f7f67ec986ba885930c57b5318d2eb3abc6960ee05d4f2eb28'
+  - &node_image 'node:20.14.0-alpine@sha256:928b24aaadbd47c1a7722c563b471195ce54788bf8230ce807e1dd500aec0549'
 
 services:
   synapse:
-    image: docker.io/matrixdotorg/synapse:v1.105.0@sha256:cbd56af58232394066d3ab9e55316ac92ed4b8b9392a829812e333f5178be6c0
+    image: docker.io/matrixdotorg/synapse:v1.108.0@sha256:1e786e582a31d4f11fd734ac10e500bdccff44e51c1604765c8e641a66634466
     environment:
       - SYNAPSE_CONFIG_PATH=/data/homeserver.yaml
       - SYNAPSE_SERVER_NAME=synapse
@@ -31,7 +31,7 @@ steps:
       - pre-commit run --all-files
 
   synapse-register-admin:
-    image: docker.io/matrixdotorg/synapse:v1.105.0@sha256:cbd56af58232394066d3ab9e55316ac92ed4b8b9392a829812e333f5178be6c0
+    image: docker.io/matrixdotorg/synapse:v1.108.0@sha256:1e786e582a31d4f11fd734ac10e500bdccff44e51c1604765c8e641a66634466
     commands:
       - timeout 120 sh -c 'while !(( register_new_matrix_user http://synapse:8008 --shared-secret testrun --admin --user admin --password admin 2> /dev/null )); do sleep 1; done;'
       - 'curl --request POST --url http://synapse:8008/_matrix/client/v3/login --header "Content-Type: application/json" --data "{\"type\": \"m.login.password\",\"user\": \"admin\",\"password\": \"admin\",\"device_id\": \"DEV\"}" | tee src/config/synapse_access_token.json'
