@@ -44,24 +44,52 @@ export async function removeExcessRoomMembers() {
       const adminUsername = process.env.ADMIN_USERNAME || ''
       await Promise.all(
         actualMembers.map(async (actualMember) => {
+          const memberMapping = await getMappingByMatrixId(actualMember)
+          if (!memberMapping || !memberMapping.accessToken) {
+            throw new Error(
+              `Could not find access token for member ${actualMember}, this is a bug`
+            )
+          }
+          const userSessionOptions = formatUserSessionOptions(
+            memberMapping.accessToken
+          )
           if (
             !memberNames.includes(actualMember) &&
             !actualMember.includes(adminUsername) // exclude admin from removal
           ) {
+            // remove excess members from rooms
             log.warn(
               `Member ${actualMember} should not be in room ${roomMapping.matrixId}, removing`
             )
-            const memberMapping = await getMappingByMatrixId(actualMember)
-            if (!memberMapping || !memberMapping.accessToken) {
-              throw new Error(
-                `Could not find access token for member ${actualMember}, this is a bug`
-              )
-            }
 
             await axios.post(
               `/_matrix/client/v3/rooms/${roomMapping.matrixId}/leave`,
               {},
-              formatUserSessionOptions(memberMapping.accessToken)
+              userSessionOptions
+            )
+          } else {
+            // set read status for allowed members
+            const lastMessageId = (
+              await axios.get(
+                `/_matrix/client/v3/rooms/${roomMapping.matrixId}/messages`,
+                {
+                  ...userSessionOptions,
+                  params: {
+                    ts: Date.now(),
+                    dir: 'b',
+                    limit: 1,
+                    filter: { types: ['m.room.message'] },
+                  },
+                }
+              )
+            ).data.chunk[0].event_id
+            log.info(
+              `Member ${actualMember} is allowed in room ${roomMapping.matrixId}, setting read status for message ${lastMessageId}`
+            )
+            await axios.post(
+              `/_matrix/client/v3/rooms/${roomMapping.matrixId}/receipt/m.read/${lastMessageId}`,
+              {},
+              userSessionOptions
             )
           }
         })
