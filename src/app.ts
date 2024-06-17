@@ -2,19 +2,18 @@ import dotenv from 'dotenv'
 dotenv.config()
 import { AxiosError } from 'axios'
 import lineByLine from 'n-readlines'
+import { exit } from 'node:process'
 import 'reflect-metadata'
 import { Entity, entities } from './Entities'
 import { handleDirectChats } from './handlers/directChats'
-import { handlePinnedMessages } from './handlers/pinnedMessages'
-import { handleMarkAllAsRead } from './handlers/markAllAsRead'
+import { handleRoomMemberships } from './handlers/handleRoomMemberships'
 import { handle as handleMessage } from './handlers/messages'
+import { handlePinnedMessages } from './handlers/pinnedMessages'
 import { handle as handleRoom } from './handlers/rooms'
 import { handle as handleUser } from './handlers/users'
 import log from './helpers/logger'
 import { initStorage } from './helpers/storage'
 import { whoami } from './helpers/synapse'
-import { exit } from 'node:process'
-import { removeExcessRoomMembers } from './handlers/removeExcessRoomMembers'
 
 log.info('rocketchat2matrix starts.')
 
@@ -62,10 +61,8 @@ async function main() {
     await handleDirectChats()
     log.info('Setting pinned messages in rooms')
     await handlePinnedMessages()
-    log.info('Mark all messages as read in rooms')
-    await handleMarkAllAsRead()
     log.info('Checking room memberships')
-    await removeExcessRoomMembers()
+    await handleRoomMemberships()
 
     log.info('Done.')
   } catch (error) {

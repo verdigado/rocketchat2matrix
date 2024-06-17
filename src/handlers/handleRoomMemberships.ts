@@ -14,8 +14,9 @@ import { getFilteredMembers } from './rooms'
 
 /**
  * Remove all excess Matrix room members, which are not part of the Rocket.Chat room and not an admin
+ * Set the room read status to "read all" for others
  */
-export async function removeExcessRoomMembers() {
+export async function handleRoomMemberships() {
   const roomMappings = await getAllMappingsByType(
     entities[Entity.Rooms].mappingType
   )
