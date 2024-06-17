@@ -1,5 +1,3 @@
-version: '3'
-
 services:
   synapse:
     image: docker.io/matrixdotorg/synapse:v1.108.0@sha256:1e786e582a31d4f11fd734ac10e500bdccff44e51c1604765c8e641a66634466

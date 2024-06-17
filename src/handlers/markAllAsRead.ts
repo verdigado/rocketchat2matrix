@@ -2,22 +2,22 @@ import lineByLine from 'n-readlines'
 import { entities } from '../Entities'
 import log from '../helpers/logger'
 import {
-  getRoomId,
-  getMessageId,
   getAccessToken,
   getMemberships,
+  getMessageId,
+  getRoomId,
 } from '../helpers/storage'
 import { axios, formatUserSessionOptions } from '../helpers/synapse'
 import { RcMessage } from './messages'
 
 /**
- * Reads the input file for messages, when we found last room message, we make all user of the room read it
- * @returns last message for each room
+ * Reads the input file for messages and returns the last messages for rooms
+ * @returns A record mapping room IDs to their respective last messages
  */
 export async function getLastRoomMessages(): Promise<
   Record<string, RcMessage>
 > {
-  let lastMessages: Record<string, RcMessage> = {}
+  const lastMessages: Record<string, RcMessage> = {}
   let roomId: string = ''
   let messageInMemory: RcMessage | null = null
   const rl = new lineByLine(`./inputs/${entities.messages.filename}`)
@@ -55,7 +55,7 @@ export async function markAllAsRead(
     for (const userRcId of userRcIdList) {
       const token = await getAccessToken(userRcId)
       if (typeof token === 'string' && matrixMessageId) {
-        const userSessionOptions = await formatUserSessionOptions(token)
+        const userSessionOptions = formatUserSessionOptions(token)
         log.http(
           `Mark all messages as read in room ${matrixRoomId} for user ${userRcId}`,
           (
