@@ -45,15 +45,20 @@ export async function handleRoomMemberships() {
       const adminUsername = process.env.ADMIN_USERNAME || ''
       await Promise.all(
         actualMembers.map(async (actualMember) => {
-          const memberMapping = await getMappingByMatrixId(actualMember)
-          if (!memberMapping || !memberMapping.accessToken) {
-            throw new Error(
-              `Could not find access token for member ${actualMember}, this is a bug`
+          let userSessionOptions = {}
+          // set session options for non-admins
+          if (!actualMember.includes(adminUsername)) {
+            const memberMapping = await getMappingByMatrixId(actualMember)
+            if (!memberMapping || !memberMapping.accessToken) {
+              throw new Error(
+                `Could not find access token for member ${actualMember}, this is a bug`
+              )
+            }
+            userSessionOptions = formatUserSessionOptions(
+              memberMapping.accessToken
             )
           }
-          const userSessionOptions = formatUserSessionOptions(
-            memberMapping.accessToken
-          )
+
           if (
             !memberNames.includes(actualMember) &&
             !actualMember.includes(adminUsername) // exclude admin from removal
