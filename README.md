@@ -115,6 +115,7 @@ Then you can restart with an empty but quite equal server, following the instruc
 - Several state change events are not translated, as the previous state is unknown, but the final state should be equal
 - If the root message of a thread is deleted or of a deleted user, the thread will be skipped
 - The script follows a design to easily continue a migration if the script crashed by restarting it
+- Any normal username containing the configured admin name causes trouble
 
 ## Contributing
 
