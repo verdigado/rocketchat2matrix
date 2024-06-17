@@ -1,80 +1,74 @@
-import lineByLine from 'n-readlines'
-import { entities } from '../Entities'
+import { Entity, entities } from '../Entities'
 import log from '../helpers/logger'
+import { getAllMappingsByType, getMappingByMatrixId } from '../helpers/storage'
 import {
-  getAccessToken,
-  getMemberships,
-  getMessageId,
-  getRoomId,
-} from '../helpers/storage'
-import { axios, formatUserSessionOptions } from '../helpers/synapse'
-import { RcMessage } from './messages'
+  axios,
+  formatUserSessionOptions,
+  getMatrixMembers,
+} from '../helpers/synapse'
 
 /**
- * Reads the input file for messages and returns the last messages for rooms
- * @returns A record mapping room IDs to their respective last messages
+ * Mark all rooms as read for each member
  */
-export async function getLastRoomMessages(): Promise<
-  Record<string, RcMessage>
-> {
-  const lastMessages: Record<string, RcMessage> = {}
-  let roomId: string = ''
-  let messageInMemory: RcMessage | null = null
-  const rl = new lineByLine(`./inputs/${entities.messages.filename}`)
-  let line: false | Buffer
-  while ((line = rl.next())) {
-    const message: RcMessage = JSON.parse(line.toString())
-    if (message.md) {
-      if (roomId === '') {
-        roomId = message.rid
-        messageInMemory = message
-      } else {
-        if (roomId !== message.rid && messageInMemory) {
-          lastMessages[roomId] = messageInMemory
-        }
-        roomId = message.rid
-        messageInMemory = message
-      }
-    }
+export async function handleMarkAllAsRead(): Promise<void> {
+  const roomMappings = await getAllMappingsByType(
+    entities[Entity.Rooms].mappingType
+  )
+  if (!roomMappings) {
+    throw new Error(`No room mappings found`)
   }
-  return lastMessages
-}
 
-/**
- * Sets the m.room.pinned_events settings for rooms.
- * @param pinnedMessages An object containing rooms and their pinned message, to be set in synapse
- */
-export async function markAllAsRead(
-  lastMessages: Record<string, RcMessage>
-): Promise<void> {
-  const messages: RcMessage[] = Object.values(lastMessages)
-  for (const message of messages) {
-    const userRcIdList = await getMemberships(message.rid)
-    const matrixRoomId = await getRoomId(message.rid)
-    const matrixMessageId = await getMessageId(message._id)
-    for (const userRcId of userRcIdList) {
-      const token = await getAccessToken(userRcId)
-      if (typeof token === 'string' && matrixMessageId) {
-        const userSessionOptions = formatUserSessionOptions(token)
-        log.http(
-          `Mark all messages as read in room ${matrixRoomId} for user ${userRcId}`,
-          (
-            await axios.post(
-              `/_matrix/client/v3/rooms/${matrixRoomId}/receipt/m.read/${matrixMessageId}`,
-              { thread_id: 'main' },
-              userSessionOptions
+  await Promise.all(
+    roomMappings.map(async (roomMapping) => {
+      let lastMessageId = ''
+
+      log.info(
+        `Checking memberships for room ${roomMapping.rcId} / ${roomMapping.matrixId}`
+      )
+      // get each rooms' users
+      const roomMemberIds: string[] = await getMatrixMembers(
+        roomMapping.matrixId || ''
+      )
+
+      // get member credentials
+      await Promise.all(
+        roomMemberIds.map(getMappingByMatrixId).map(async (memberIdMapping) => {
+          const sessionOptions = formatUserSessionOptions(
+            (await memberIdMapping)?.accessToken || ''
+          )
+          // if no lastMessage, get that
+          if (!lastMessageId) {
+            lastMessageId = (
+              await axios.get(
+                `/_matrix/client/v3/rooms/${roomMapping.matrixId}/messages`,
+                {
+                  ...sessionOptions,
+                  params: {
+                    ts: Date.now(),
+                    dir: 'b',
+                    limit: 1,
+                    filter: { types: ['m.room.message'] },
+                  },
+                }
+              )
+            ).data.chunk[0].event_id
+            log.http(
+              `Looked up last message for room ${roomMapping.matrixId}: ${lastMessageId}`
             )
-          ).data
-        )
-      }
-    }
-  }
-}
-
-/**
- * Handle pinned messages for all rooms, marking pinned messages as such in the room settings
- */
-export async function handleMarkAllAsRead() {
-  const lastMessages = await getLastRoomMessages()
-  await markAllAsRead(lastMessages)
+          }
+          // set read status
+          log.http(
+            `Mark all messages as read in room ${roomMapping.matrixId} for user ${(await memberIdMapping)?.matrixId}`,
+            (
+              await axios.post(
+                `/_matrix/client/v3/rooms/${roomMapping.matrixId}/receipt/m.read/${lastMessageId}`,
+                {},
+                sessionOptions
+              )
+            ).data
+          )
+        })
+      )
+    })
+  )
 }
