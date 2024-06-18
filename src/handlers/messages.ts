@@ -1,5 +1,6 @@
 import { AxiosError } from 'axios'
 import * as emoji from 'node-emoji'
+import * as showdown from 'showdown'
 import { Entity, entities } from '../Entities'
 import { IdMapping } from '../entity/IdMapping'
 import log from '../helpers/logger'
@@ -10,7 +11,11 @@ import {
   getUserMappingByName,
   save,
 } from '../helpers/storage'
-import { axios, formatUserSessionOptions } from '../helpers/synapse'
+import {
+  axios,
+  formatUserSessionOptions,
+  getServerName,
+} from '../helpers/synapse'
 import reactionKeys from '../reactions.json'
 import { executeAndHandleMissingMember } from './rooms'
 
@@ -60,8 +65,14 @@ export type RcMessage = {
  */
 export type MatrixMessage = {
   body: string
-  msgtype: 'm.text'
-  type: 'm.room.message'
+  msgtype: string
+  type: string
+  format?: string
+  formatted_body?: string
+  'm.mentions'?: {
+    room?: boolean
+    user_ids?: Array<string>
+  }
   'm.relates_to'?: {
     rel_type: 'm.thread'
     event_id: string
@@ -79,17 +90,68 @@ export type ReactionKeys = {
   [key: string]: string
 }
 
+async function mapTextMessage(rcMessage: RcMessage): Promise<MatrixMessage> {
+  let msg = rcMessage.msg
+
+  const synapseServerName = await getServerName()
+
+  const converterOptions: any = {}
+  const mentions: any = {}
+
+  if (msg.includes('@all')) {
+    converterOptions['ghMentions'] = false
+
+    msg = msg.replace('@all', '@room')
+
+    mentions.room = true
+  } else {
+    converterOptions['ghMentions'] = true
+    converterOptions['ghMentionsLink'] =
+      'https://matrix.to/#/@{u}:' + synapseServerName
+
+    for (const mention of msg.matchAll(
+      /(^|\s)(\\)?(@([a-z\d]+(?:[a-z\d._-]+?[a-z\d]+)*))/gi
+    )) {
+      const username = '@' + mention[4] + ':' + synapseServerName
+
+      mentions.user_ids = mentions?.user_ids || []
+      mentions.user_ids.push(username)
+    }
+  }
+
+  const converter = new showdown.Converter(converterOptions)
+
+  const emojified = emoji.emojify(msg)
+  const htmled = converter.makeHtml(emojified)
+
+  if (htmled.replace(/^<p>/, '').replace(/<\/p>$/, '') === emojified) {
+    // markdown adds <p></p> tags, if it only adds this, don't
+    return {
+      type: 'm.room.message',
+      msgtype: 'm.text',
+      body: emojified,
+      'm.mentions': mentions,
+    }
+  } else {
+    return {
+      type: 'm.room.message',
+      msgtype: 'm.text',
+      body: emojified,
+      format: 'org.matrix.custom.html',
+      formatted_body: htmled,
+      'm.mentions': mentions,
+    }
+  }
+}
+
 /**
  * Translate a Rocket.Chat message to a Matrix message event body
  * @param rcMessage The Rocket.Chat message to convert
  * @returns The Matrix event body
  */
-export function mapMessage(rcMessage: RcMessage): MatrixMessage {
-  return {
-    body: rcMessage.msg,
-    msgtype: 'm.text',
-    type: 'm.room.message',
-  }
+export async function mapMessage(rcMessage: RcMessage): Promise<MatrixMessage> {
+  // handle other types of messages like pictures and files
+  return mapTextMessage(rcMessage)
 }
 
 /**
@@ -250,7 +312,7 @@ export async function handle(rcMessage: RcMessage): Promise<void> {
     )
     return
   }
-  const matrixMessage = mapMessage(rcMessage)
+  const matrixMessage = await mapMessage(rcMessage)
   const ts = new Date(rcMessage.ts.$date).valueOf()
 
   if (rcMessage.tmid) {
