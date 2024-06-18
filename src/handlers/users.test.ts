@@ -102,9 +102,10 @@ test('users are excluded', () => {
 })
 
 test('creating mapping', async () => {
-  await expect(createMapping(rcUser._id, matrixUser)).resolves.toBe(undefined)
+  await expect(createMapping(rcUser, matrixUser)).resolves.toBe(undefined)
   expect(mockedStorage.save).toHaveBeenCalledWith({
     rcId: rcUser._id,
+    rcUsername: "testuser",
     matrixId: matrixUser.user_id,
     type: entities[Entity.Users].mappingType,
     accessToken: matrixUser.access_token,
