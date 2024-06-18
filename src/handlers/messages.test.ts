@@ -62,12 +62,24 @@ test('handling messages', async () => {
   mockedAxios.put.mockResolvedValue({ data: { event_id: 'test@matrix' } })
   mockedStorage.getRoomId.mockResolvedValue('testMatrixRoom')
   mockedStorage.getUserId.mockResolvedValue('testMatrixUser')
-  mockedStorage.getMessageId.mockResolvedValueOnce(undefined) // For checking if the Message already exists
-  mockedStorage.getMessageId.mockResolvedValue('testMatrixMessage') // For checking the parent message
+  mockedStorage.getMessageId
+    .mockResolvedValueOnce('existingMxMessage') // for checking skipping existing messages
+    .mockResolvedValueOnce(undefined) // For checking if the Message already exists
+    .mockResolvedValueOnce('testMatrixMessage') // For checking the parent message
+  const debug = jest.spyOn(log, 'debug')
 
-  await expect(handle({ ...rcMessage, tmid: 'threadId' })).resolves.toBe(
-    undefined
+  // test skipping existing message
+  await expect(
+    handle({ ...rcMessage, _id: 'existingRcMessage' })
+  ).resolves.toBeUndefined()
+  expect(debug).toHaveBeenLastCalledWith(
+    'Mapping exists: existingRcMessage -> existingMxMessage'
   )
+
+  // test threaded message
+  await expect(
+    handle({ ...rcMessage, tmid: 'threadId' })
+  ).resolves.toBeUndefined()
 
   expect(mockedAxios.put).toHaveBeenLastCalledWith(
     '/_matrix/client/v3/rooms/testMatrixRoom/send/m.room.message/testMessage?user_id=testMatrixUser&ts=111111000',
@@ -87,7 +99,44 @@ test('handling messages', async () => {
   expect(mockedStorage.getRoomId).toHaveBeenLastCalledWith('testRoom')
   expect(mockedStorage.getUserId).toHaveBeenLastCalledWith('testUser')
   expect(mockedStorage.getMessageId).toHaveBeenLastCalledWith('threadId')
-  mockedAxios.put.mockClear()
+
+  // skip message without room
+  const warn = jest.spyOn(log, 'warn')
+  mockedStorage.getRoomId.mockResolvedValue(undefined)
+
+  await expect(
+    handle({ ...rcMessage, _id: 'roomless', rid: '404' })
+  ).resolves.toBeUndefined()
+  expect(warn).toHaveBeenLastCalledWith(
+    'Could not find room 404 for message roomless, skipping.'
+  )
+
+  // skip message with type
+  mockedStorage.getRoomId.mockResolvedValue('testOtherMatrixRoom')
+
+  await expect(handle({ ...rcMessage, t: 'anything' })).resolves.toBeUndefined()
+  expect(warn).toHaveBeenLastCalledWith(
+    'Message testMessage is of unhandled type anything, skipping.'
+  )
+
+  // skip message without user id
+  mockedStorage.getUserId.mockResolvedValueOnce(undefined)
+  await expect(
+    handle({ ...rcMessage, u: { _id: 'none', username: 'nobody' } })
+  ).resolves.toBeUndefined()
+  expect(warn).toHaveBeenLastCalledWith(
+    'Could not find author nobody for message testMessage, skipping.'
+  )
+
+  // skip message with missing thread
+  await expect(
+    handle({ ...rcMessage, tmid: 'missingThread' })
+  ).resolves.toBeUndefined()
+  expect(warn).toHaveBeenLastCalledWith(
+    'Related message missingThread missing, skipping.'
+  )
+
+  mockedAxios.put.mockReset()
 })
 
 test('handling reactions', async () => {
