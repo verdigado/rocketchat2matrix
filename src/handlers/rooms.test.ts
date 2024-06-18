@@ -141,7 +141,7 @@ test('creating memberships for direct chats', async () => {
       _id: 'hoihoi',
       uids: ['hoi', 'hoi'],
     })
-  ).resolves.toBe(undefined)
+  ).resolves.toBeUndefined()
 
   expect(mockedStorage.createMembership).toHaveBeenCalledWith('hoihoi', 'hoi')
   expect(mockedStorage.createMembership).toHaveBeenCalledTimes(1)
@@ -185,7 +185,7 @@ test('accepting invitation by joining the room', async () => {
       },
       room_id
     )
-  ).resolves.toBe(undefined)
+  ).resolves.toBeUndefined()
   expect(mockedAxios.post).toHaveBeenCalledWith(
     `/_matrix/client/v3/join/${room_id}`,
     {},

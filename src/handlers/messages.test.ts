@@ -118,7 +118,7 @@ test('handling reactions', async () => {
       'messageId',
       'roomId'
     )
-  ).resolves.toBe(undefined)
+  ).resolves.toBeUndefined()
 
   expect(warn).toHaveBeenCalledWith(
     'Could not find user mapping for name: undefined, skipping reaction 👍 for message messageId'

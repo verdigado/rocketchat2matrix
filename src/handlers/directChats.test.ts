@@ -91,7 +91,7 @@ test('setting direct chats', async () => {
       testerExistingSameSettings: { partner: ['same'] },
       testerExistingDifferentSettings: { otherPartner: ['d1fferent'] },
     })
-  ).resolves.toBe(undefined)
+  ).resolves.toBeUndefined()
   expect(mockedSynapse.axios.get).toHaveBeenCalledWith(
     '/_matrix/client/v3/user/a/account_data/m.direct',
     undefined
@@ -111,5 +111,5 @@ test('setting direct chats', async () => {
 })
 
 test('handle direct chats', async () => {
-  await expect(handleDirectChats()).resolves.toBe(undefined)
+  await expect(handleDirectChats()).resolves.toBeUndefined()
 })

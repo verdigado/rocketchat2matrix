@@ -30,7 +30,7 @@ beforeAll(async () => {
 })
 
 test('create mapping', async () => {
-  await expect(save(mapping)).resolves.toBe(undefined)
+  await expect(save(mapping)).resolves.toBeUndefined()
 })
 
 test('get mapping', async () => {
@@ -42,13 +42,13 @@ test('get mapping', async () => {
 
 test('get access token', async () => {
   await expect(getAccessToken(mapping.rcId)).resolves.toBe(mapping.accessToken)
-  await expect(getAccessToken('inexistent')).resolves.toBe(undefined)
+  await expect(getAccessToken('inexistent')).resolves.toBeUndefined()
 })
 
 test('create membership', async () => {
   await expect(
     createMembership(membership.rcRoomId, membership.rcUserId)
-  ).resolves.toBe(undefined)
+  ).resolves.toBeUndefined()
 })
 
 test('get membership', async () => {
