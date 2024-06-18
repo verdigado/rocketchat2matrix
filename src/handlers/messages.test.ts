@@ -2,7 +2,10 @@ process.env.AS_TOKEN = 'ApplicationSecretToken'
 process.env.EXCLUDED_USERS = 'excludedUser1,excludedUser2'
 import { expect, jest, test } from '@jest/globals'
 import axios from 'axios'
+import { IdMapping } from '../entity/IdMapping'
+import log from '../helpers/logger'
 import * as storage from '../helpers/storage'
+import { formatUserSessionOptions } from '../helpers/synapse'
 import {
   MatrixMessage,
   RcMessage,
@@ -11,18 +14,12 @@ import {
   handleReactions,
   mapMessage,
 } from './messages'
-import log from '../helpers/logger'
-import { IdMapping } from '../entity/IdMapping'
-import { formatUserSessionOptions } from '../helpers/synapse'
 
 jest.mock('axios')
 const mockedAxios = axios as jest.Mocked<typeof axios>
 
 jest.mock('../helpers/storage')
 const mockedStorage = storage as jest.Mocked<typeof storage>
-
-jest.mock('../helpers/logger')
-const mockedLog = log as jest.Mocked<typeof log>
 
 const rcMessage: RcMessage = {
   _id: 'testMessage',
@@ -108,6 +105,7 @@ test('handling reactions', async () => {
       }
     }
   )
+  const warn = jest.spyOn(log, 'warn')
 
   await expect(
     handleReactions(
@@ -122,10 +120,10 @@ test('handling reactions', async () => {
     )
   ).resolves.toBe(undefined)
 
-  expect(mockedLog.warn).toHaveBeenCalledWith(
+  expect(warn).toHaveBeenCalledWith(
     'Could not find user mapping for name: undefined, skipping reaction 👍 for message messageId'
   )
-  expect(mockedLog.warn).toHaveBeenCalledWith(
+  expect(warn).toHaveBeenCalledWith(
     'Could not find an emoji for :undefined: for message messageId, skipping'
   )
   const thumbsupCall = [

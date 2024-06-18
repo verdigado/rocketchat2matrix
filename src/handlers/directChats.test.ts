@@ -26,9 +26,6 @@ const mockedStorage = storage as jest.Mocked<typeof storage>
 jest.mock('../helpers/synapse')
 const mockedSynapse = synapse as jest.Mocked<typeof synapse>
 
-jest.mock('../helpers/logger')
-const mockedLog = log as jest.Mocked<typeof log>
-
 const directChats: DirectChats = {
   abc: ['a', 'b', 'c'],
   ab: ['a', 'b'],
@@ -48,6 +45,7 @@ test('direct chat parsing', () => {
 })
 
 test('get direct chats', async () => {
+  const warn = jest.spyOn(log, 'warn')
   mockedLineByLine.prototype.next
     .mockReturnValueOnce(
       Buffer.from(JSON.stringify({ t: 'c', _id: 'ignored' }))
@@ -63,12 +61,13 @@ test('get direct chats', async () => {
   )
 
   await expect(getDirectChats()).resolves.toStrictEqual(directChats)
-  expect(mockedLog.warn).toHaveBeenCalledWith(
+  expect(warn).toHaveBeenCalledWith(
     'Room false has no mapping, skipping to mark it as a direct chat.'
   )
 })
 
 test('setting direct chats', async () => {
+  const debug = jest.spyOn(log, 'debug')
   mockedSynapse.axios.get
     .mockRejectedValueOnce(new AxiosError('Unauthorized'))
     .mockRejectedValueOnce(
@@ -103,10 +102,10 @@ test('setting direct chats', async () => {
     undefined
   )
 
-  expect(mockedLog.debug).toHaveBeenCalledWith(
+  expect(debug).toHaveBeenCalledWith(
     'User testerExistingSameSettings already has the expected direct chats configured, skipping.'
   )
-  expect(mockedLog.debug).toHaveBeenCalledWith(
+  expect(debug).toHaveBeenCalledWith(
     'User testerExistingDifferentSettings already has a different direct chat setting.'
   )
 })

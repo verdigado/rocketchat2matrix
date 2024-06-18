@@ -1,3 +1,4 @@
+import { AxiosError } from 'axios'
 import * as emoji from 'node-emoji'
 import { Entity, entities } from '../Entities'
 import { IdMapping } from '../entity/IdMapping'
@@ -13,7 +14,6 @@ import {
 import { axios, formatUserSessionOptions } from '../helpers/synapse'
 import reactionKeys from '../reactions.json'
 import { executeAndHandleMissingMember } from './rooms'
-import { AxiosError } from 'axios'
 
 const applicationServiceToken = process.env.AS_TOKEN || ''
 if (!applicationServiceToken) {

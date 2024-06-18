@@ -1,3 +1,4 @@
+import { AxiosError } from 'axios'
 import lineByLine from 'n-readlines'
 import { entities } from '../Entities'
 import log from '../helpers/logger'
@@ -8,7 +9,6 @@ import {
   getMatrixMembers,
 } from '../helpers/synapse'
 import { RcRoom, RcRoomTypes } from './rooms'
-import { AxiosError } from 'axios'
 
 export type DirectChats = { [key: string]: string[] }
 export type UserDirectChatMappings = {
