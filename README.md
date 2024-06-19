@@ -112,7 +112,9 @@ Then you can restart with an empty but quite equal server, following the instruc
   - Individual logos of _netzbegruenung_ and _verdigado_ have been replaced by a generic sunflower
   - Skin colour tones and genders have been ignored in the manual translation, using the neutral versions
 - Discussions are not translated, yet, as they have a channel-like data structure which probably should be translated to threads
-- Several state change events are not translated, as the previous state is unknown, but the final state should be equal
+- Generally state change events are not translated (anymore, for the sake of complexity), but the final state should be equal
+  - Memberships: change events are ignored. Memberships are applied at the start, when needed or terminated at the end
+  - Name changes: as the previous state is usually unknown, they are ignored
 - If the root message of a thread is deleted or of a deleted user, the thread will be skipped
 - The script follows a design to easily continue a migration if the script crashed by restarting it
 - Any normal username containing the configured admin name causes trouble
