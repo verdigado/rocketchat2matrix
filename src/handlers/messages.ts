@@ -4,7 +4,6 @@ import { Entity, entities } from '../Entities'
 import { IdMapping } from '../entity/IdMapping'
 import log from '../helpers/logger'
 import {
-  getMappingByMatrixId,
   getMessageId,
   getRoomId,
   getUserId,
