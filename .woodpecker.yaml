@@ -67,7 +67,7 @@ steps:
   node-test-units:
     image: *node_image
     commands:
-      - npm test --ci
+      - npm test -- --ci --coverage
     depends_on: [node-install-dependencies]
 
   node-compile:
