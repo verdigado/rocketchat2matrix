@@ -78,11 +78,11 @@ export async function getMatrixMembers(
   )
 }
 
-let serverName: string;
+let serverName: string
 
 export async function getServerName(): Promise<string> {
-	if(!serverName) {
-		serverName = (await axios.get(`/_matrix/key/v2/server`)).data.server_name;
-	}
-	return serverName;
+  if (!serverName) {
+    serverName = (await axios.get(`/_matrix/key/v2/server`)).data.server_name
+  }
+  return serverName
 }

@@ -95,8 +95,8 @@ async function mapTextMessage(rcMessage: RcMessage): Promise<MatrixMessage> {
 
   const synapseServerName = await getServerName()
 
-  const converterOptions: any = {}
-  const mentions: any = {}
+  const converterOptions: showdown.ConverterOptions = {}
+  const mentions: MatrixMessage['m.mentions'] = {}
 
   if (msg.includes('@all')) {
     converterOptions['ghMentions'] = false
