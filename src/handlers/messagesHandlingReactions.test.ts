@@ -18,7 +18,7 @@ const mockedStorage = storage as jest.Mocked<typeof storage>
 jest.mock('./rooms')
 const mockedRooms = rooms as jest.Mocked<typeof rooms>
 
-test.only('handling reactions: duplicate reaction error', async () => {
+test('handling reactions: duplicate reaction error', async () => {
   const debug = jest.spyOn(log, 'debug')
   mockedStorage.getUserMappingByName.mockImplementation(
     async (username: string) => {

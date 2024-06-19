@@ -4,17 +4,20 @@ process.env.ADMIN_USERNAME = 'testAdmin'
 import { expect, jest, test } from '@jest/globals'
 import axios from 'axios'
 import { Entity, entities } from '../Entities'
+import adminAccessToken from '../config/synapse_access_token.json'
 import { IdMapping } from '../entity/IdMapping'
+import log from '../helpers/logger'
+import * as storage from '../helpers/storage'
 import {
   MatrixUser,
   RcUser,
   createMapping,
   createUser,
   generateHmac,
+  handle,
   mapUser,
   userIsExcluded,
-} from '../handlers/users'
-import * as storage from '../helpers/storage'
+} from './users'
 
 jest.mock('axios')
 const mockedAxios = axios as jest.Mocked<typeof axios>
@@ -109,4 +112,54 @@ test('creating mapping', async () => {
     type: entities[Entity.Users].mappingType,
     accessToken: matrixUser.access_token,
   } as IdMapping)
+  mockedStorage.save.mockClear()
+})
+
+test('handling a normal user', async () => {
+  await expect(handle({ ...rcUser })).resolves.toBeUndefined()
+
+  expect(mockedStorage.save).toHaveBeenLastCalledWith({
+    rcId: 'testRc',
+    matrixId: 'TestRandomId',
+    type: 0,
+    accessToken: 'secretaccesstoken',
+  } as IdMapping)
+})
+
+const info = jest.spyOn(log, 'info')
+test('handling an admin user', async () => {
+  await expect(
+    handle({
+      ...rcUser,
+      _id: 'admin',
+      username: 'testAdmin',
+      name: 'Administrator',
+    })
+  ).resolves.toBeUndefined()
+
+  expect(mockedStorage.save).toHaveBeenLastCalledWith({
+    rcId: 'admin',
+    matrixId: adminAccessToken.user_id,
+    type: 0,
+    accessToken: adminAccessToken.access_token,
+  } as IdMapping)
+  expect(info).toHaveBeenLastCalledWith(
+    'User testAdmin is defined as admin in ENV, mapping as such'
+  )
+  mockedStorage.save.mockClear()
+})
+
+const debug = jest.spyOn(log, 'debug')
+test('skipping existing user', async () => {
+  mockedStorage.getUserId.mockResolvedValueOnce('@copycat')
+  await expect(
+    handle({
+      ...rcUser,
+      _id: 'copycat',
+      name: 'CopyCat',
+    })
+  ).resolves.toBeUndefined()
+
+  expect(mockedStorage.save).not.toHaveBeenCalled()
+  expect(debug).toHaveBeenLastCalledWith('Mapping exists: copycat -> @copycat')
 })
