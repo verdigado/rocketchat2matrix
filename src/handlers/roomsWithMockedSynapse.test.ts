@@ -41,10 +41,8 @@ test('getting token for different room creators', async () => {
   expect(mockedSynapse.getUserSessionOptions).toHaveBeenCalledWith('creator')
 })
 
-test('inviting member errors', async () => {
-  const room_id = 'testRoomId'
-
-  // skip on user already in room
+const room_id = 'testRoomId'
+test('inviteMember: skip on user already in room', async () => {
   mockedSynapse.axios.post.mockRejectedValueOnce(
     new AxiosError('nah', '400', undefined, undefined, {
       data: {
@@ -64,8 +62,9 @@ test('inviting member errors', async () => {
   expect(debug).toHaveBeenCalledWith(
     `User alreadyInThere is already in room ${room_id}, probably because this user created the room as a fallback.`
   )
+})
 
-  // skip on creator not in room
+test('inviteMember: skip on creator not in room', async () => {
   mockedSynapse.axios.post.mockRejectedValueOnce(
     new AxiosError('nah', '400', undefined, undefined, {
       data: {
@@ -85,8 +84,9 @@ test('inviting member errors', async () => {
   expect(warn).toHaveBeenCalledWith(
     `Creator is not in room ${room_id}, skipping invitation for captainLeft.`
   )
+})
 
-  // another error
+test('inviteMember: fail with unexpected errors', async () => {
   mockedSynapse.axios.post.mockRejectedValueOnce('this is truly unexpected')
   await expect(
     inviteMember('captainLeft', room_id, sessionOption)
@@ -96,42 +96,41 @@ test('inviting member errors', async () => {
   mockedSynapse.axios.post.mockReset()
 })
 
-test('executeAndHandleMissingMember', async () => {
-  // unexpected error
+test('executeAndHandleMissingMember: fail with unexpected errors', async () => {
   await expect(
     executeAndHandleMissingMember(async () => {
       throw new Error('this is truly unexpected')
     })
   ).rejects.toThrowError('this is truly unexpected')
+})
 
-  // missing member
-  const axiosNotInRoomError = async () => {
-    throw new AxiosError('nah', '400', undefined, undefined, {
-      data: {
-        errcode: 'M_FORBIDDEN',
-        error: `User @MsMissing not in room !roomId`,
-      },
-      status: 400,
-      statusText: 'nah',
-      headers: {} as AxiosResponseHeaders,
-      config: {} as InternalAxiosRequestConfig,
-    })
-  }
+const axiosNotInRoomError = async () => {
+  throw new AxiosError('nah', '400', undefined, undefined, {
+    data: {
+      errcode: 'M_FORBIDDEN',
+      error: `User @MsMissing not in room !roomId`,
+    },
+    status: 400,
+    statusText: 'nah',
+    headers: {} as AxiosResponseHeaders,
+    config: {} as InternalAxiosRequestConfig,
+  })
+}
 
-  // mapping not found
+test('executeAndHandleMissingMember: skip missing member', async () => {
   mockedStorage.getMappingByMatrixId.mockResolvedValueOnce(null)
   await expect(
     executeAndHandleMissingMember(axiosNotInRoomError)
   ).resolves.toBeUndefined()
   expect(mockedStorage.getMappingByMatrixId).toHaveBeenCalledWith('@MsMissing')
+})
 
+test('executeAndHandleMissingMember: using admin to invite missing member', async () => {
   mockedStorage.getMappingByMatrixId.mockResolvedValue({
     rcId: 'RcMissing',
     matrixId: '@MsMissing:matrix',
     accessToken: 'mellon',
   } as IdMapping)
-
-  // using admin to continue
   mockedSynapse.axios.get.mockResolvedValue({ data: { creator: null } })
 
   const warn = jest.spyOn(log, 'warn')
@@ -146,8 +145,9 @@ test('executeAndHandleMissingMember', async () => {
   expect(http).toHaveBeenCalledWith(
     'Accepting invitation for member RcMissing aka. @MsMissing:matrix'
   )
+})
 
-  // using room creator
+test('executeAndHandleMissingMember: using admin to invite missing member', async () => {
   log.debug('using room creator')
   mockedSynapse.axios.get.mockResolvedValue({
     data: { creator: 'RoomCreatorId' },
