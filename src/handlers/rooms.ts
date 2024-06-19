@@ -423,7 +423,7 @@ export async function executeAndHandleMissingMember(
       } else {
         const creatorMapping = await getMappingByMatrixId(roomCreatorId)
         if (!creatorMapping?.accessToken) {
-          log.warn(`Could not access token for ${roomCreatorId}, skipping.`)
+          log.warn(`Could not get access token for ${roomCreatorId}, skipping.`)
           return
         }
         userSessionOptions = formatUserSessionOptions(

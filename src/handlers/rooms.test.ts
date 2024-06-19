@@ -66,7 +66,7 @@ const sessionOption: SessionOptions = {
 const room_id = '!randomId:my.matrix.host'
 
 test('mapping direct chats', () => {
-  expect(mapRoom(rcDirectChat)).toEqual({
+  expect(mapRoom(rcDirectChat)).toStrictEqual({
     is_direct: true,
     preset: MatrixRoomPresets.trusted,
     creation_content: {
@@ -74,10 +74,26 @@ test('mapping direct chats', () => {
     },
   })
   expect(getCreator(rcDirectChat)).toBe('aliceid')
+
+  // check name for self chats
+  expect(
+    mapRoom({
+      ...rcDirectChat,
+      usersCount: 1,
+      lastMessage: { u: { name: 'loneWolf' } },
+    })
+  ).toStrictEqual({
+    is_direct: true,
+    preset: MatrixRoomPresets.trusted,
+    creation_content: {
+      'm.federate': false,
+    },
+    name: 'loneWolf',
+  })
 })
 
 test('mapping public rooms', () => {
-  expect(mapRoom(rcPublicRoom)).toEqual({
+  expect(mapRoom(rcPublicRoom)).toStrictEqual({
     preset: MatrixRoomPresets.public,
     room_alias_name: 'public',
     name: 'public',
@@ -91,7 +107,7 @@ test('mapping public rooms', () => {
 })
 
 test('mapping private rooms', () => {
-  expect(mapRoom(rcPrivateRoom)).toEqual({
+  expect(mapRoom(rcPrivateRoom)).toStrictEqual({
     preset: MatrixRoomPresets.private,
     room_alias_name: 'private',
     name: 'private',
@@ -109,6 +125,14 @@ test('mapping live chats', () => {
     mapRoom({ _id: 'liveChatId', t: RcRoomTypes.live })
   ).toThrowError(
     'Room with ID: liveChatId is a live chat. Migration not implemented'
+  )
+})
+
+test('fail on wrong room types', () => {
+  expect(() =>
+    mapRoom({ _id: 'typeErr', t: 'notMyType' as RcRoomTypes })
+  ).toThrowError(
+    'Room with ID: typeErr is of type notMyType, which is unknown or unimplemented'
   )
 })
 
@@ -170,8 +194,9 @@ test('inviting member', async () => {
     { user_id: 'inviteme' },
     sessionOption
   )
+
   expect(mockedAxios.post).toHaveBeenCalledTimes(1)
-  mockedAxios.post.mockClear()
+  mockedAxios.post.mockReset()
 })
 
 test('accepting invitation by joining the room', async () => {
