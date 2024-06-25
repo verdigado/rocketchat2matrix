@@ -1,5 +1,5 @@
 variables:
-  - &node_image 'node:22-alpine@sha256:df46071ae175bc2c0468ae58e32f00ed6c9779eb70112cdf0d2ccf85035bc7ff'
+  - &node_image 'node:22-alpine@sha256:415f3219943ef82fa45988acdaa7df05a0b52cabd3502095c59d34cbe28c1bc1'
 
 services:
   synapse:
