@@ -24,7 +24,7 @@ services:
 
 steps:
   check-pre-commit:
-    image: git.verdigado.com/verdigado-images/container-pre-commit:latest@sha256:7fed51a85daa4826df5b4dc66fff439af8403fa2d9b2671f201a40ed0647f1e9
+    image: git.verdigado.com/verdigado-images/container-pre-commit:latest@sha256:ac47384563255809e3150ad7ccc67830db663a853b1178faa2d50a689e33451e
     environment:
       - SKIP=no-commit-to-branch # Ignore "don't commit to protected branch" check
     commands:
