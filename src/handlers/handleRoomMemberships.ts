@@ -82,9 +82,9 @@ export async function handleRoomMemberships() {
                   ...userSessionOptions,
                   params: {
                     ts: Date.now(),
-                    dir: 'b',
-                    limit: 1,
-                    filter: { types: ['m.room.message'] },
+                    dir: 'b', // direction: backwards, getting latest event first
+                    limit: 1, // getting only the latest event
+                    filter: { types: ['m.room.message'] }, // getting only message events
                   },
                 }
               )

@@ -61,7 +61,7 @@ async function main() {
     await handleDirectChats()
     log.info('Setting pinned messages in rooms')
     await handlePinnedMessages()
-    log.info('Checking room memberships')
+    log.info('Checking room memberships and setting read status')
     await handleRoomMemberships()
 
     log.info('Done.')
