@@ -5,7 +5,6 @@ import axios from 'axios'
 import { IdMapping } from '../entity/IdMapping'
 import log from '../helpers/logger'
 import * as storage from '../helpers/storage'
-import { formatUserSessionOptions } from '../helpers/synapse'
 import {
   MatrixMessage,
   RcMessage,
@@ -14,9 +13,11 @@ import {
   handleReactions,
   mapMessage,
 } from './messages'
+import * as synapse from '../helpers/synapse'
 
-jest.mock('axios')
-const mockedAxios = axios as jest.Mocked<typeof axios>
+jest.mock('../helpers/synapse')
+const mockedSynapse = synapse as jest.Mocked<typeof synapse>
+const mockedAxios = mockedSynapse.axios as jest.Mocked<typeof axios>
 
 jest.mock('../helpers/storage')
 const mockedStorage = storage as jest.Mocked<typeof storage>
@@ -43,8 +44,8 @@ afterEach(() => {
   jest.resetAllMocks()
 })
 
-test('mapping messages', () => {
-  expect(mapMessage(rcMessage)).toStrictEqual(matrixMessage)
+test('mapping messages', async () => {
+  await expect(mapMessage(rcMessage)).resolves.toStrictEqual(matrixMessage)
 })
 
 test('creating messages', async () => {
@@ -57,7 +58,7 @@ test('creating messages', async () => {
   expect(mockedAxios.put).toHaveBeenCalledWith(
     '/_matrix/client/v3/rooms/roomID/send/m.room.message/transactionId?user_id=userID&ts=42',
     matrixMessage,
-    { headers: { Authorization: 'Bearer ApplicationSecretToken' } }
+    undefined
   )
 })
 
@@ -100,7 +101,7 @@ test('handling threaded messages', async () => {
         },
       },
     },
-    { headers: { Authorization: 'Bearer ApplicationSecretToken' } }
+    undefined
   )
   expect(mockedStorage.getRoomId).toHaveBeenLastCalledWith('testRoom')
   expect(mockedStorage.getUserId).toHaveBeenLastCalledWith('testUser')
@@ -200,7 +201,7 @@ test('handling reactions', async () => {
         key: '👍',
       },
     },
-    formatUserSessionOptions('testuser'),
+    undefined,
   ]
   expect(mockedAxios.put).toHaveBeenNthCalledWith(1, ...thumbsupCall)
   expect(mockedAxios.put).toHaveBeenNthCalledWith(
@@ -213,7 +214,7 @@ test('handling reactions', async () => {
         key: '☣',
       },
     },
-    formatUserSessionOptions('testuser')
+    undefined
   )
   expect(mockedAxios.put).toHaveBeenNthCalledWith(3, ...thumbsupCall)
   expect(mockedAxios.put).toHaveBeenCalledTimes(3)
