@@ -3,6 +3,7 @@ import axios from 'axios'
 import {
   formatUserSessionOptions,
   getMatrixMembers,
+  getServerName,
   getUserSessionOptions,
   whoami,
 } from './synapse'
@@ -16,7 +17,7 @@ jest.mock('axios')
 const mockedAxios = axios as jest.Mocked<typeof axios>
 
 afterEach(() => {
-  mockedAxios.get.mockReset()
+  jest.resetAllMocks()
 })
 
 test('whoami', async () => {
@@ -64,4 +65,14 @@ test('get Matrix members', async () => {
     '/_matrix/client/v3/rooms/matrixRoomId/joined_members',
     formatUserSessionOptions('')
   )
+})
+
+test('get server name', async () => {
+  mockedAxios.get
+    .mockResolvedValueOnce({ data: { server_name: 'matrix.test' } })
+    .mockRejectedValueOnce(undefined)
+  await expect(getServerName()).resolves.toBe('matrix.test')
+  await expect(getServerName()).resolves.toBe('matrix.test')
+  expect(mockedAxios.get).toHaveBeenCalledWith('/_matrix/key/v2/server')
+  expect(mockedAxios.get).toHaveBeenCalledTimes(1)
 })
