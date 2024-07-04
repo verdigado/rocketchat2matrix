@@ -1,6 +1,6 @@
 process.env.AS_TOKEN = 'ApplicationSecretToken'
 process.env.EXCLUDED_USERS = 'excludedUser1,excludedUser2'
-import { expect, jest, test } from '@jest/globals'
+import { afterEach, expect, jest, test } from '@jest/globals'
 import axios from 'axios'
 import { IdMapping } from '../entity/IdMapping'
 import log from '../helpers/logger'
@@ -39,6 +39,10 @@ const matrixMessage: MatrixMessage = {
   type: 'm.room.message',
 }
 
+afterEach(() => {
+  jest.resetAllMocks()
+})
+
 test('mapping messages', () => {
   expect(mapMessage(rcMessage)).toStrictEqual(matrixMessage)
 })
@@ -55,28 +59,30 @@ test('creating messages', async () => {
     matrixMessage,
     { headers: { Authorization: 'Bearer ApplicationSecretToken' } }
   )
-  mockedAxios.put.mockClear()
 })
 
-test('handling messages', async () => {
+test('skipping existing messages', async () => {
   mockedAxios.put.mockResolvedValue({ data: { event_id: 'test@matrix' } })
   mockedStorage.getRoomId.mockResolvedValue('testMatrixRoom')
   mockedStorage.getUserId.mockResolvedValue('testMatrixUser')
-  mockedStorage.getMessageId
-    .mockResolvedValueOnce('existingMxMessage') // for checking skipping existing messages
-    .mockResolvedValueOnce(undefined) // For checking if the Message already exists
-    .mockResolvedValueOnce('testMatrixMessage') // For checking the parent message
+  mockedStorage.getMessageId.mockResolvedValue('existingMxMessage') // for checking skipping existing messages
   const debug = jest.spyOn(log, 'debug')
 
-  // test skipping existing message
   await expect(
     handle({ ...rcMessage, _id: 'existingRcMessage' })
   ).resolves.toBeUndefined()
   expect(debug).toHaveBeenLastCalledWith(
     'Mapping exists: existingRcMessage -> existingMxMessage'
   )
+})
 
-  // test threaded message
+test('handling threaded messages', async () => {
+  mockedAxios.put.mockResolvedValue({ data: { event_id: 'test@matrix' } })
+  mockedStorage.getRoomId.mockResolvedValue('testMatrixRoom')
+  mockedStorage.getUserId.mockResolvedValue('testMatrixUser')
+  mockedStorage.getMessageId
+    .mockResolvedValueOnce(undefined) // For checking if the Message already exists
+    .mockResolvedValueOnce('testMatrixMessage') // For checking the parent message
   await expect(
     handle({ ...rcMessage, tmid: 'threadId' })
   ).resolves.toBeUndefined()
@@ -99,8 +105,9 @@ test('handling messages', async () => {
   expect(mockedStorage.getRoomId).toHaveBeenLastCalledWith('testRoom')
   expect(mockedStorage.getUserId).toHaveBeenLastCalledWith('testUser')
   expect(mockedStorage.getMessageId).toHaveBeenLastCalledWith('threadId')
+})
 
-  // skip message without room
+test('skipping messages without room', async () => {
   const warn = jest.spyOn(log, 'warn')
   mockedStorage.getRoomId.mockResolvedValue(undefined)
 
@@ -110,33 +117,42 @@ test('handling messages', async () => {
   expect(warn).toHaveBeenLastCalledWith(
     'Could not find room 404 for message roomless, skipping.'
   )
+})
 
-  // skip message with type
+test('skipping messages with a type', async () => {
   mockedStorage.getRoomId.mockResolvedValue('testOtherMatrixRoom')
+  const warn = jest.spyOn(log, 'warn')
 
   await expect(handle({ ...rcMessage, t: 'anything' })).resolves.toBeUndefined()
   expect(warn).toHaveBeenLastCalledWith(
     'Message testMessage is of unhandled type anything, skipping.'
   )
+})
 
-  // skip message without user id
-  mockedStorage.getUserId.mockResolvedValueOnce(undefined)
+test('skipping messages without user id', async () => {
+  mockedStorage.getRoomId.mockResolvedValue('testMatrixRoom')
+  mockedStorage.getUserId.mockResolvedValue(undefined)
+  const warn = jest.spyOn(log, 'warn')
+
   await expect(
     handle({ ...rcMessage, u: { _id: 'none', username: 'nobody' } })
   ).resolves.toBeUndefined()
   expect(warn).toHaveBeenLastCalledWith(
     'Could not find author nobody for message testMessage, skipping.'
   )
+})
 
-  // skip message with missing thread
+test('skipping messages with a missing thread', async () => {
+  mockedStorage.getRoomId.mockResolvedValue('testMatrixRoom')
+  mockedStorage.getUserId.mockResolvedValue('testMatrixUser')
+  const warn = jest.spyOn(log, 'warn')
+
   await expect(
     handle({ ...rcMessage, tmid: 'missingThread' })
   ).resolves.toBeUndefined()
   expect(warn).toHaveBeenLastCalledWith(
     'Related message missingThread missing, skipping.'
   )
-
-  mockedAxios.put.mockReset()
 })
 
 test('handling reactions', async () => {
@@ -201,5 +217,4 @@ test('handling reactions', async () => {
   )
   expect(mockedAxios.put).toHaveBeenNthCalledWith(3, ...thumbsupCall)
   expect(mockedAxios.put).toHaveBeenCalledTimes(3)
-  mockedAxios.put.mockClear()
 })
