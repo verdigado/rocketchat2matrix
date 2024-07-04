@@ -123,23 +123,23 @@ async function mapTextMessage(rcMessage: RcMessage): Promise<MatrixMessage> {
 
   const emojified = emoji.emojify(msg)
   const htmled = converter.makeHtml(emojified)
+  const matrixMessage: MatrixMessage = {
+    type: 'm.room.message',
+    msgtype: 'm.text',
+    body: emojified,
+  }
+  if (mentions && (mentions.room || mentions.user_ids)) {
+    matrixMessage['m.mentions'] = mentions
+  }
 
   if (htmled.replace(/^<p>/, '').replace(/<\/p>$/, '') === emojified) {
-    // markdown adds <p></p> tags, if it only adds this, don't
-    return {
-      type: 'm.room.message',
-      msgtype: 'm.text',
-      body: emojified,
-      'm.mentions': mentions,
-    }
+    // markdown adds <p></p> tags, if it only adds this, don't add html part
+    return matrixMessage
   } else {
     return {
-      type: 'm.room.message',
-      msgtype: 'm.text',
-      body: emojified,
+      ...matrixMessage,
       format: 'org.matrix.custom.html',
       formatted_body: htmled,
-      'm.mentions': mentions,
     }
   }
 }
