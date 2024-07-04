@@ -233,24 +233,24 @@ test('parse markdown', async () => {
 })
 
 test('parse emojis', async () => {
-  // testing normal emojis
   await expect(
     mapTextMessage({ ...rcMessage, msg: 'Test :thinking::grimacing: :fire:' })
   ).resolves.toStrictEqual({
     ...matrixMessage,
     body: 'Test 🤔😬 🔥',
   })
+})
 
-  // // testing translated reaction emojis
-  // await expect(
-  //   mapTextMessage({
-  //     ...rcMessage,
-  //     msg: 'normal :straight_ruler: and :custard: custom stuff :verdigado:',
-  //   })
-  // ).resolves.toStrictEqual({
-  //   ...matrixMessage,
-  //   body: 'normal 📏 and 🍮 custom stuff 🌻',
-  // })
+test.failing('parse custom emojis', async () => {
+  await expect(
+    mapTextMessage({
+      ...rcMessage,
+      msg: 'normal :straight_ruler: and :custard: custom stuff :verdigado:',
+    })
+  ).resolves.toStrictEqual({
+    ...matrixMessage,
+    body: 'normal 📏 and 🍮 custom stuff 🌻',
+  })
 })
 
 test('parse mentions', async () => {
@@ -300,3 +300,5 @@ test('parse mentions', async () => {
     'm.mentions': { user_ids: ['@tom:matrix.test', '@jerry:matrix.test'] },
   })
 })
+
+test.todo('parse messages mentioning @all, @here and individuals')
