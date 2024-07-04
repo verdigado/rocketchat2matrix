@@ -106,6 +106,8 @@ export async function mapTextMessage(
     msg = msg.replace('@all', '@room')
 
     mentions.room = true
+  } else if (msg.includes('@here')) {
+    converterOptions['ghMentions'] = false
   } else {
     converterOptions['ghMentions'] = true
     converterOptions['ghMentionsLink'] =

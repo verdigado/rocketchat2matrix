@@ -268,13 +268,13 @@ test('parse mentions', async () => {
     'm.mentions': { room: true },
   })
 
-  // // mentioning online rc users, ignored in mx
-  // await expect(
-  //   mapTextMessage({ ...rcMessage, msg: 'Online @here' })
-  // ).resolves.toStrictEqual({
-  //   ...matrixMessage,
-  //   body: 'Online @here',
-  // })
+  // mentioning online rc users, ignored in mx
+  await expect(
+    mapTextMessage({ ...rcMessage, msg: 'Online @here' })
+  ).resolves.toStrictEqual({
+    ...matrixMessage,
+    body: 'Online @here',
+  })
 
   // mentioning one user
   await expect(
