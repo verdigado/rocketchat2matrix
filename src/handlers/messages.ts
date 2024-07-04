@@ -90,7 +90,9 @@ export type ReactionKeys = {
   [key: string]: string
 }
 
-async function mapTextMessage(rcMessage: RcMessage): Promise<MatrixMessage> {
+export async function mapTextMessage(
+  rcMessage: RcMessage
+): Promise<MatrixMessage> {
   let msg = rcMessage.msg
 
   const synapseServerName = await getServerName()

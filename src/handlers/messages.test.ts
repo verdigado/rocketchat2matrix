@@ -12,6 +12,7 @@ import {
   handle,
   handleReactions,
   mapMessage,
+  mapTextMessage,
 } from './messages'
 import * as synapse from '../helpers/synapse'
 
@@ -218,4 +219,56 @@ test('handling reactions', async () => {
   )
   expect(mockedAxios.put).toHaveBeenNthCalledWith(3, ...thumbsupCall)
   expect(mockedAxios.put).toHaveBeenCalledTimes(3)
+})
+
+test.todo('parse markdown')
+
+test.todo('parse emojis')
+
+test('parse mentions', async () => {
+  mockedSynapse.getServerName.mockResolvedValue('matrix.test')
+
+  // no mentions
+  await expect(mapTextMessage(rcMessage)).resolves.toStrictEqual(matrixMessage)
+
+  // mentioning the room
+  await expect(
+    mapTextMessage({ ...rcMessage, msg: 'Hello @all' })
+  ).resolves.toStrictEqual({
+    ...matrixMessage,
+    body: 'Hello @room',
+    'm.mentions': { room: true },
+  })
+
+  // // mentioning online rc users, ignored in mx
+  // await expect(
+  //   mapTextMessage({ ...rcMessage, msg: 'Online @here' })
+  // ).resolves.toStrictEqual({
+  //   ...matrixMessage,
+  //   body: 'Online @here',
+  // })
+
+  // mentioning one user
+  await expect(
+    mapTextMessage({ ...rcMessage, msg: 'Hey @joe' })
+  ).resolves.toStrictEqual({
+    ...matrixMessage,
+    body: 'Hey @joe',
+    format: 'org.matrix.custom.html',
+    formatted_body:
+      '<p>Hey <a href="https://matrix.to/#/@joe:matrix.test">@joe</a></p>', // with element, there is no @ within the a tag, nor p surrounding it
+    'm.mentions': { user_ids: ['@joe:matrix.test'] },
+  })
+
+  // mentioning multiple users
+  await expect(
+    mapTextMessage({ ...rcMessage, msg: '@tom & @jerry' })
+  ).resolves.toStrictEqual({
+    ...matrixMessage,
+    body: '@tom & @jerry',
+    format: 'org.matrix.custom.html',
+    formatted_body:
+      '<p><a href="https://matrix.to/#/@tom:matrix.test">@tom</a> &amp; <a href="https://matrix.to/#/@jerry:matrix.test">@jerry</a></p>', // with element, there is no @ within the a tag, nor p surrounding it
+    'm.mentions': { user_ids: ['@tom:matrix.test', '@jerry:matrix.test'] },
+  })
 })
