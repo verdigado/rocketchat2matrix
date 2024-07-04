@@ -221,7 +221,16 @@ test('handling reactions', async () => {
   expect(mockedAxios.put).toHaveBeenCalledTimes(3)
 })
 
-test.todo('parse markdown')
+test('parse markdown', async () => {
+  await expect(
+    mapTextMessage({ ...rcMessage, msg: 'This is **bold**' })
+  ).resolves.toStrictEqual({
+    ...matrixMessage,
+    body: 'This is **bold**',
+    format: 'org.matrix.custom.html',
+    formatted_body: '<p>This is <strong>bold</strong></p>',
+  })
+})
 
 test('parse emojis', async () => {
   // testing normal emojis
