@@ -3,10 +3,11 @@ import { axios } from '../src/helpers/synapse'
 import { entities } from '../src/Entities'
 import lineByLine from 'n-readlines'
 import { MatrixRoom, RcRoom } from '../src/handlers/rooms'
+import { MatrixUser, RcUser } from '../src/handlers/users'
 
 describe('rooms', () => {
-  const rcRooms = []
-  const matrixRooms = []
+  const rcRooms: RcRoom[] = []
+  const matrixRooms: MatrixRoom[] = []
 
   beforeAll(async () => {
     const rl = new lineByLine(`./inputs/${entities.rooms.filename}`)
@@ -21,7 +22,29 @@ describe('rooms', () => {
   })
 
   test('equal length', async () => {
-    expect(matrixRooms.length).toBe(rcRooms.length)
-    test
+    const IGNORED_ROOMS = 0
+    expect(matrixRooms.length).toBe(rcRooms.length - IGNORED_ROOMS)
+  })
+})
+
+describe('users', () => {
+  const rcUsers: RcUser[] = []
+  const matrixUsers: MatrixUser[] = []
+
+  beforeAll(async () => {
+    const rl = new lineByLine(`./inputs/${entities.users.filename}`)
+    let line: false | Buffer
+    while ((line = rl.next())) {
+      const user: RcUser = JSON.parse(line.toString())
+      rcUsers.push(user)
+    }
+    ;(await axios.get('/_synapse/admin/v2/users')).data.users.forEach(
+      (user: MatrixUser) => matrixUsers.push(user)
+    )
+  })
+
+  test('equal length', async () => {
+    const IGNORED_USERS = 1
+    expect(matrixUsers.length).toBe(rcUsers.length - IGNORED_USERS)
   })
 })
