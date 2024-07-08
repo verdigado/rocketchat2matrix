@@ -81,6 +81,7 @@ export type MatrixMessage = {
       event_id: string
     }
   }
+  room_id?: string
 }
 
 /**

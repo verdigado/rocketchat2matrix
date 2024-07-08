@@ -24,7 +24,7 @@ describe('rooms', () => {
     )
   })
 
-  test('equal length', async () => {
+  test('equal length', () => {
     const IGNORED_ROOMS = 0
     expect(matrixRooms.length).toBe(rcRooms.length - IGNORED_ROOMS)
   })
@@ -88,5 +88,34 @@ describe('messages', () => {
     expect(messages.filter((message) => !!message.mapping).length).toBe(
       messages.length - IGNORED_MESSAGES
     )
+  })
+
+  test('reactions', async () => {
+    async function getReactions(rcMessageId: string) {
+      const message = messages.filter(
+        (message) => message.rc._id == rcMessageId
+      )[0]
+      const relations = (
+        await axios.get(
+          `/_matrix/client/v1/rooms/${message.matrix?.room_id}/relations/${message.mapping!.matrixId}`
+        )
+      ).data.chunk
+      const reactions = relations
+        .filter((relation: { type: string }) => relation.type == 'm.reaction')
+        .map((reaction: any) => ({
+          user: reaction.sender.split('@')[1].split(':')[0],
+          key: reaction.content['m.relates_to'].key,
+        }))
+      return reactions
+    }
+
+    await expect(getReactions('msgId001')).resolves.toStrictEqual([
+      { user: 'other_user', key: '❤️' },
+      { user: 'other_user', key: '🎉' },
+      { user: 'normal_user', key: '🎉' },
+    ])
+    await expect(getReactions('msgThreadResponse')).resolves.toStrictEqual([
+      { user: 'normal_user', key: '👋' },
+    ])
   })
 })
