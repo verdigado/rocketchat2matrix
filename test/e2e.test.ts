@@ -127,4 +127,19 @@ describe('messages', () => {
       { user: 'normal_user', key: '👋' },
     ])
   })
+
+  test('pinned messages', async () => {
+    const pinnedMessages: Message[] = messages.filter(
+      (message) => message.rc.pinned
+    )
+    const roomId = await getRoomId('GENERAL')
+
+    expect(
+      (
+        await axios.get(
+          `/_matrix/client/v3/rooms/${roomId}/state/m.room.pinned_events/`
+        )
+      ).data.pinned
+    ).toStrictEqual(pinnedMessages.map((message) => message.mapping?.matrixId))
+  })
 })
