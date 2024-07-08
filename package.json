@@ -44,7 +44,7 @@
     "eslint-plugin-promise": "^6.2.0",
     "husky": "^9.0.11",
     "lint-staged": "^15.2.5",
-    "node-jq": "^4.4.0",
+    "node-jq": "^6.0.0",
     "prettier": "3.3.2",
     "ts-jest": "^29.1.4",
     "typescript": "^5.4.5"
