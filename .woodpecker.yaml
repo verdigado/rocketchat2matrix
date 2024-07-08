@@ -51,6 +51,12 @@ steps:
       - npm run lint
     depends_on: [node-install-dependencies]
 
+  node-test-units:
+    image: *node_image
+    commands:
+      - npm test -- --ci --coverage --rootDir src/
+    depends_on: [node-install-dependencies]
+
   node-test-e2e:
     image: *node_image
     environment:
@@ -65,13 +71,8 @@ steps:
       - npx node-jq --compact-output '.' test/rooms.json > inputs/rocketchat_room.json
       - npx node-jq --compact-output '.' test/users.json > inputs/users.json
       - npm start
+      - npm test -- --ci --rootDir test/
     depends_on: [node-install-dependencies, synapse-register-admin]
-
-  node-test-units:
-    image: *node_image
-    commands:
-      - npm test -- --ci --coverage
-    depends_on: [node-install-dependencies]
 
   node-compile:
     image: *node_image
