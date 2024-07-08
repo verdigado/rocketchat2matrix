@@ -28,6 +28,11 @@ describe('rooms', () => {
     const IGNORED_ROOMS = 0
     expect(matrixRooms.length).toBe(rcRooms.length - IGNORED_ROOMS)
   })
+
+  test.todo('modes and permissions')
+  test.todo('self chat exists')
+  test.todo('direct chats are marked as such')
+  test.todo('memberships are correct')
 })
 
 describe('users', () => {
@@ -50,6 +55,9 @@ describe('users', () => {
     const IGNORED_USERS = 1
     expect(matrixUsers.length).toBe(rcUsers.length - IGNORED_USERS)
   })
+
+  test.todo('deleted user is skipped')
+  test.todo('user without username is handled')
 })
 
 type Message = {
@@ -142,4 +150,7 @@ describe('messages', () => {
       ).data.pinned
     ).toStrictEqual(pinnedMessages.map((message) => message.mapping?.matrixId))
   })
+
+  test.todo('markdown conversion')
+  test.todo('answer is in thread')
 })
