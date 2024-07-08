@@ -82,6 +82,7 @@ export type MatrixMessage = {
     }
   }
   room_id?: string
+  origin_server_ts?: number
 }
 
 /**

@@ -24,7 +24,7 @@ describe('rooms', () => {
     )
   })
 
-  test('equal length', () => {
+  test('equal number', () => {
     const IGNORED_ROOMS = 0
     expect(matrixRooms.length).toBe(rcRooms.length - IGNORED_ROOMS)
   })
@@ -46,7 +46,7 @@ describe('users', () => {
     )
   })
 
-  test('equal length', async () => {
+  test('equal number', async () => {
     const IGNORED_USERS = 1
     expect(matrixUsers.length).toBe(rcUsers.length - IGNORED_USERS)
   })
@@ -83,10 +83,19 @@ describe('messages', () => {
     }
   })
 
-  test('equal length', async () => {
+  test('equal number', async () => {
     const IGNORED_MESSAGES = 5
     expect(messages.filter((message) => !!message.mapping).length).toBe(
       messages.length - IGNORED_MESSAGES
+    )
+  })
+
+  test('correct time', async () => {
+    const existingMessages = messages.filter((message) => !!message.matrix)
+    expect(
+      existingMessages.map((message) => new Date(message.rc.ts.$date).getTime())
+    ).toStrictEqual(
+      existingMessages.map((message) => message.matrix!.origin_server_ts)
     )
   })
 
