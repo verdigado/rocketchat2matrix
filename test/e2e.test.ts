@@ -47,7 +47,23 @@ describe('rooms', () => {
     expect(room.public).toBe(false)
     expect(room.join_rules).toBe('invite')
   })
-  test.todo('modes and permissions')
+
+  test('modes and permissions', () => {
+    const publicRoom = matrixRooms.find((room) => room.name === 'PubRoom') as {
+      public: boolean
+      join_rules: string
+    }
+    expect(publicRoom.public).toBe(true)
+    expect(publicRoom.join_rules).toBe('public')
+
+    const privateRoom = matrixRooms.find((room) => room.name === 'priv') as {
+      public: boolean
+      join_rules: string
+    }
+    expect(privateRoom.public).toBe(false)
+    expect(privateRoom.join_rules).toBe('invite')
+  })
+
   test.todo('direct chats are marked as such')
   test.todo('memberships are correct')
 })
