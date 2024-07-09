@@ -8,6 +8,10 @@ import { MatrixUser, RcUser } from '../src/handlers/users'
 import { getMapping, getRoomId, initStorage } from '../src/helpers/storage'
 import { axios } from '../src/helpers/synapse'
 
+beforeAll(async () => {
+  await initStorage()
+})
+
 describe('rooms', () => {
   const rcRooms: RcRoom[] = []
   const matrixRooms: MatrixRoom[] = []
@@ -29,8 +33,21 @@ describe('rooms', () => {
     expect(matrixRooms.length).toBe(rcRooms.length - IGNORED_ROOMS)
   })
 
+  test('self chat exists', async () => {
+    const roomId = await getRoomId('selfChat')
+    const room = matrixRooms.find((room) => room.room_id === roomId) as {
+      joined_members: number
+      creator: string
+      public: boolean
+      join_rules: string
+    }
+
+    expect(room.joined_members).toBe(1)
+    expect(room.creator).toContain('normal_user')
+    expect(room.public).toBe(false)
+    expect(room.join_rules).toBe('invite')
+  })
   test.todo('modes and permissions')
-  test.todo('self chat exists')
   test.todo('direct chats are marked as such')
   test.todo('memberships are correct')
 })
@@ -56,7 +73,6 @@ describe('users', () => {
     expect(matrixUsers.length).toBe(rcUsers.length - IGNORED_USERS)
   })
 
-  test.todo('deleted user is skipped')
   test.todo('user without username is handled')
 })
 
@@ -75,7 +91,6 @@ describe('messages', () => {
   const messages: Message[] = []
 
   beforeAll(async () => {
-    await initStorage()
     const rl = new lineByLine(`./inputs/${entities.messages.filename}`)
     let line: false | Buffer
     while ((line = rl.next())) {
