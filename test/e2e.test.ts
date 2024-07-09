@@ -5,8 +5,13 @@ import { IdMapping } from '../src/entity/IdMapping'
 import { MatrixMessage, RcMessage } from '../src/handlers/messages'
 import { MatrixRoom, RcRoom } from '../src/handlers/rooms'
 import { MatrixUser, RcUser } from '../src/handlers/users'
-import { getMapping, getRoomId, initStorage } from '../src/helpers/storage'
-import { axios } from '../src/helpers/synapse'
+import {
+  getMapping,
+  getRoomId,
+  getUserId,
+  initStorage,
+} from '../src/helpers/storage'
+import { axios, formatUserSessionOptions } from '../src/helpers/synapse'
 
 beforeAll(async () => {
   await initStorage()
@@ -64,7 +69,32 @@ describe('rooms', () => {
     expect(privateRoom.join_rules).toBe('invite')
   })
 
-  test.todo('direct chats are marked as such')
+  test('direct chats are marked as such', async () => {
+    const roomId = await getRoomId('directChat')
+    const room = matrixRooms.find((room) => room.room_id === roomId) as {
+      joined_members: number
+      creator: string
+      public: boolean
+      join_rules: string
+    }
+
+    expect(room.joined_members).toBe(2)
+    expect(room.creator).toContain('normal_user')
+    expect(room.public).toBe(false)
+    expect(room.join_rules).toBe('invite')
+
+    const normalUserMapping = await getMapping('normalUserId', 0)
+    const directChats = (
+      await axios.get(
+        `/_matrix/client/v3/user/${normalUserMapping?.matrixId}/account_data/m.direct`,
+        formatUserSessionOptions(normalUserMapping?.accessToken || '')
+      )
+    ).data
+    expect(directChats[(await getUserId('otherUserId')) || '']).toContain(
+      roomId
+    )
+  })
+
   test.todo('memberships are correct')
 })
 
