@@ -62,7 +62,12 @@ describe('users', () => {
 
 type Message = {
   rc: RcMessage
-  matrix?: MatrixMessage
+  matrix?: {
+    content: MatrixMessage
+    event_id?: string
+    room_id?: string
+    origin_server_ts?: number
+  }
   mapping?: IdMapping
 }
 
@@ -109,12 +114,10 @@ describe('messages', () => {
 
   test('reactions', async () => {
     async function getReactions(rcMessageId: string) {
-      const message = messages.filter(
-        (message) => message.rc._id == rcMessageId
-      )[0]
+      const message = messages.find((message) => message.rc._id == rcMessageId)
       const relations = (
         await axios.get(
-          `/_matrix/client/v1/rooms/${message.matrix?.room_id}/relations/${message.mapping!.matrixId}`
+          `/_matrix/client/v1/rooms/${message!.matrix!.room_id}/relations/${message!.mapping!.matrixId}`
         )
       ).data.chunk
       const reactions = relations
@@ -151,6 +154,17 @@ describe('messages', () => {
     ).toStrictEqual(pinnedMessages.map((message) => message.mapping?.matrixId))
   })
 
+  test('answer is in thread', () => {
+    const threadMessage = messages.find(
+      (message) => message.rc._id == 'msgThreadResponse'
+    )?.matrix
+
+    const rootMessageId = messages.find(
+      (message) => message.rc._id == 'msgId001'
+    )?.matrix?.event_id
+
+    expect(threadMessage?.content['m.relates_to']?.event_id).toBe(rootMessageId)
+  })
+
   test.todo('markdown conversion')
-  test.todo('answer is in thread')
 })
