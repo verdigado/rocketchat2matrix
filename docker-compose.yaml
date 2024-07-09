@@ -40,7 +40,7 @@ services:
   synapse-admin:
     container_name: synapse-admin
     hostname: synapse-admin
-    image: awesometechnologies/synapse-admin:0.10.1@sha256:73b99588716305fd8ce69955b648b2ba0e08a74be7e019c0d8208b2ac8d678a4
+    image: awesometechnologies/synapse-admin:0.10.2@sha256:5636a46f17888ec153380308fdfb7aca09de9153ecf435a5384b769c8e2f6ac0
     ports:
       - '8080:80'
     restart: 'no'
