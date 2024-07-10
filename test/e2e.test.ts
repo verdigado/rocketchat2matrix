@@ -227,5 +227,13 @@ describe('messages', () => {
     expect(threadMessage?.content['m.relates_to']?.event_id).toBe(rootMessageId)
   })
 
-  test.todo('markdown conversion')
+  test('markdown, mention and emoji conversion', () => {
+    const message = messages.find(
+      (message) => message.rc._id == 'mdMsg'
+    )?.matrix
+
+    expect(message?.content?.formatted_body).toContain(
+      '@room <strong>Markdown</strong> works 🎉'
+    )
+  })
 })
