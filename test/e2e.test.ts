@@ -95,7 +95,61 @@ describe('rooms', () => {
     )
   })
 
-  test.todo('memberships are correct')
+  test('memberships are correct', async () => {
+    const sortById = (
+      a: { id: string | undefined; members: (string | undefined)[] },
+      b: { id: string | undefined; members: (string | undefined)[] }
+    ): number => a.id?.localeCompare(b.id || '') || 0
+
+    const matrixRoomMembers = await Promise.all(
+      matrixRooms.map(async (room) => ({
+        id: room.room_id,
+        members: (
+          await axios.get(`/_synapse/admin/v1/rooms/${room.room_id}/members`)
+        ).data.members.sort(),
+      }))
+    )
+
+    const rcRoomMembers = await Promise.all(
+      [
+        {
+          id: 'GENERAL',
+          members: ['normalUserId', 'otherUserId'],
+        },
+        {
+          id: 'publicRoom',
+          members: ['normalUserId', 'otherUserId'],
+        },
+        {
+          id: 'privateRoom',
+          members: ['normalUserId', 'otherUserId'],
+        },
+        {
+          id: 'directChat',
+          members: ['normalUserId', 'otherUserId'],
+        },
+        {
+          id: 'selfChat',
+          members: ['normalUserId'],
+        },
+      ].map(async (room) => ({
+        id: await getRoomId(room.id),
+        members: await Promise.all(room.members.map(getUserId)),
+      }))
+    )
+
+    // add admin user to GENERAL room
+    const admin = (await axios.get('/_matrix/client/v3/account/whoami')).data
+      .user_id
+    rcRoomMembers[0].members.push(admin)
+
+    expect(matrixRoomMembers.sort(sortById)).toEqual(
+      rcRoomMembers.sort(sortById).map((room) => ({
+        id: room.id,
+        members: room.members.sort(),
+      }))
+    )
+  })
 })
 
 describe('users', () => {
@@ -122,18 +176,18 @@ describe('users', () => {
   test.todo('user without username is handled')
 })
 
-type Message = {
-  rc: RcMessage
-  matrix?: {
-    content: MatrixMessage
-    event_id?: string
-    room_id?: string
-    origin_server_ts?: number
-  }
-  mapping?: IdMapping
-}
-
 describe('messages', () => {
+  type Message = {
+    rc: RcMessage
+    matrix?: {
+      content: MatrixMessage
+      event_id?: string
+      room_id?: string
+      origin_server_ts?: number
+    }
+    mapping?: IdMapping
+  }
+
   const messages: Message[] = []
 
   beforeAll(async () => {
