@@ -79,9 +79,3 @@ steps:
       - diff db-snapshot.sql <(sqlite3 db.sqlite .dump)
 
     depends_on: [node-install-dependencies, synapse-register-admin]
-
-  node-compile:
-    image: *node_image
-    commands:
-      - npm run compile
-    depends_on: [node-install-dependencies]
