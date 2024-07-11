@@ -129,6 +129,10 @@ describe('rooms', () => {
           members: ['normalUserId', 'otherUserId'],
         },
         {
+          id: 'directChatWithDeletedUser',
+          members: ['normalUserId'],
+        },
+        {
           id: 'selfChat',
           members: ['normalUserId'],
         },

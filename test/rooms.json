@@ -46,6 +46,18 @@
   ]
 }
 {
+  "_id": "directChatWithDeletedUser",
+  "t": "d",
+  "usernames": [
+    "normal_user",
+    "deletedUser"
+  ],
+  "uids": [
+    "normalUserId",
+    "deletedUser"
+  ]
+}
+{
   "_id": "selfChat",
   "t": "d",
   "usernames": [
