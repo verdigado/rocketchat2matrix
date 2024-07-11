@@ -66,12 +66,18 @@ steps:
       - ADMIN_USERNAME=admin
       - ADMIN_PASSWORD=admin
     commands:
+      - apk add --update --no-cache sqlite
       - mkdir -p inputs
       - npx node-jq --compact-output '.' test/messages.json > inputs/rocketchat_message.json
       - npx node-jq --compact-output '.' test/rooms.json > inputs/rocketchat_room.json
       - npx node-jq --compact-output '.' test/users.json > inputs/users.json
       - npm start
+      - sqlite3 db.sqlite .dump > db-snapshot.sql
       - npm test -- --ci --rootDir test/
+      - npm start
+      - npm test -- --ci --rootDir test/
+      - diff db-snapshot.sql <(sqlite3 db.sqlite .dump)
+
     depends_on: [node-install-dependencies, synapse-register-admin]
 
   node-compile:
