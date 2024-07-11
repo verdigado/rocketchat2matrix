@@ -27,7 +27,6 @@ async function loadRcExport(entity: Entity) {
 
   const limit = pLimit(parseInt(process.env.CONCURRENCY_LIMIT || '50'))
   const queue = []
-  const threadedMessagesQueue = []
 
   let line: false | Buffer
   while ((line = rl.next())) {
@@ -42,9 +41,13 @@ async function loadRcExport(entity: Entity) {
         break
 
       case Entity.Messages:
+        if (!item.tmid) {
+          queue.push(limit(() => handleMessage(item)))
+        }
+        break
+
+      case Entity.ThreadMessages:
         if (item.tmid) {
-          threadedMessagesQueue.push(limit(() => handleMessage(item)))
-        } else {
           queue.push(limit(() => handleMessage(item)))
         }
         break
@@ -55,8 +58,6 @@ async function loadRcExport(entity: Entity) {
   }
 
   await Promise.all(queue)
-  log.info(`Handling ${threadedMessagesQueue.length} threaded messages`)
-  await Promise.all(threadedMessagesQueue)
 }
 
 async function main() {
@@ -70,6 +71,8 @@ async function main() {
     await loadRcExport(Entity.Rooms)
     log.info('Parsing messages')
     await loadRcExport(Entity.Messages)
+    log.info('Parsing threaded messages')
+    await loadRcExport(Entity.ThreadMessages)
     log.info('Setting direct chats to be displayed as such for each user')
     await handleDirectChats()
     log.info('Setting pinned messages in rooms')
