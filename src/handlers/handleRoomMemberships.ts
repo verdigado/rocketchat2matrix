@@ -75,7 +75,7 @@ export async function handleRoomMemberships() {
             )
           } else {
             // set read status for allowed members
-            const lastMessageId = (
+            const lastMessages = (
               await axios.get(
                 `/_matrix/client/v3/rooms/${roomMapping.matrixId}/messages`,
                 {
@@ -88,15 +88,24 @@ export async function handleRoomMemberships() {
                   },
                 }
               )
-            ).data.chunk[0].event_id
-            log.info(
-              `Member ${actualMember} is allowed in room ${roomMapping.matrixId}, setting read status for message ${lastMessageId}`
-            )
-            await axios.post(
-              `/_matrix/client/v3/rooms/${roomMapping.matrixId}/receipt/m.read/${lastMessageId}`,
-              {},
-              userSessionOptions
-            )
+            ).data
+            if (
+              lastMessages.chunk.length == 0 ||
+              !lastMessages.chunk[0].event_id
+            ) {
+              log.info(
+                `No messages in room ${roomMapping.matrixId}, skipping setting read status for ${actualMember}`
+              )
+            } else {
+              log.info(
+                `Member ${actualMember} is allowed in room ${roomMapping.matrixId}, setting read status for message ${lastMessages.chunk[0].event_id}`
+              )
+              await axios.post(
+                `/_matrix/client/v3/rooms/${roomMapping.matrixId}/receipt/m.read/${lastMessages.chunk[0].event_id}`,
+                {},
+                userSessionOptions
+              )
+            }
           }
         })
       )
