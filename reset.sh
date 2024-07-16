@@ -22,15 +22,15 @@ fi
 set -u
 
 echo 'Resetting containers and databases'
-docker-compose down
+docker compose down
 sudo rm -f files/homeserver.db
 rm -f db.sqlite
-docker-compose up -d
+docker compose up -d
 
 sleep 1.5
 echo 'Creating admin user'
 set +e
-until docker-compose exec -it synapse register_new_matrix_user $SYNAPSE_URL -c /data/homeserver.yaml --admin --user $ADMIN_USERNAME --password $ADMIN_PASSWORD &> /dev/null
+until docker compose exec -it synapse register_new_matrix_user $SYNAPSE_URL -c /data/homeserver.yaml --admin --user $ADMIN_USERNAME --password $ADMIN_PASSWORD &> /dev/null
 do
   echo 'Retrying creating admin...'
 done

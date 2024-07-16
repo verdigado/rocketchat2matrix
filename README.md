@@ -24,7 +24,7 @@ Export them to `inputs/`
 Generate a Synapse homeserver config with the following command (you might change `my.matrix.host` for the actual server name, as it can't be changed afterwards):
 
 ```shell
-docker-compose run --rm -e SYNAPSE_SERVER_NAME=my.matrix.host -e SYNAPSE_REPORT_STATS=no synapse generate
+docker compose run --rm -e SYNAPSE_SERVER_NAME=my.matrix.host -e SYNAPSE_REPORT_STATS=no synapse generate
 ```
 
 To run the script without hitting rate limiting and activating an _Application Service_ to send messages by different users with our desired timestamps, you MUST add the following options to the freshly generated `files/homeserver.yaml`. **Do not leave these in the production setup!**
@@ -63,9 +63,9 @@ Copy over `.env.example` to `.env` and insert your values. Also export the varia
 Boot up the container and (for the first time starting the server or after resetting it manually) create an admin user:
 
 ```shell
-docker-compose up -d
+docker compose up -d
 # Wait for the Server to boot, then register an admin user
-docker-compose exec -it synapse register_new_matrix_user http://localhost:8008 --config /data/homeserver.yaml --admin --user $ADMIN_USERNAME --password $ADMIN_PASSWORD
+docker compose exec -it synapse register_new_matrix_user http://localhost:8008 --config /data/homeserver.yaml --admin --user $ADMIN_USERNAME --password $ADMIN_PASSWORD
 ```
 
 Then you can access the homeserver in [Element Web](https://app.element.io/#/login) or the [local admin interface](http://localhost:8080) as `http://localhost:8008` with your `$ADMIN_USERNAME`/`$ADMIN_PASSWORD` as username/password.
@@ -95,7 +95,7 @@ To finally run the script, execute it via `npm start`.
 To clean up the Synapse server and local storage database, run either the convenience script `./reset.sh` or start with:
 
 ```shell
-docker-compose down
+docker compose down
 sudo rm files/homeserver.db
 rm db.sqlite
 ```
