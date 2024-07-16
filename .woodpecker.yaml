@@ -6,7 +6,7 @@ variables:
 
 services:
   synapse:
-    image: docker.io/matrixdotorg/synapse:v1.110.0@sha256:d59f1365bf154d0ebd06d35511e44e38d62d221fa771775891d962a29caf7e13
+    image: docker.io/matrixdotorg/synapse:v1.111.0@sha256:22ae556e0de40cc2e32762260a32bd9112bd87fad605195e34d6e2fe694eee01
     environment:
       - SYNAPSE_CONFIG_PATH=/data/homeserver.yaml
       - SYNAPSE_SERVER_NAME=synapse
@@ -34,7 +34,7 @@ steps:
       - pre-commit run --all-files
 
   synapse-register-admin:
-    image: docker.io/matrixdotorg/synapse:v1.110.0@sha256:d59f1365bf154d0ebd06d35511e44e38d62d221fa771775891d962a29caf7e13
+    image: docker.io/matrixdotorg/synapse:v1.111.0@sha256:22ae556e0de40cc2e32762260a32bd9112bd87fad605195e34d6e2fe694eee01
     commands:
       - timeout 120 sh -c 'while !(( register_new_matrix_user http://synapse:8008 --shared-secret testrun --admin --user admin --password admin 2> /dev/null )); do sleep 1; done;'
       - 'curl --request POST --url http://synapse:8008/_matrix/client/v3/login --header "Content-Type: application/json" --data "{\"type\": \"m.login.password\",\"user\": \"admin\",\"password\": \"admin\",\"device_id\": \"DEV\"}" | tee src/config/synapse_access_token.json'
