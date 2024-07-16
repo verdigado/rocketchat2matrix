@@ -69,10 +69,12 @@ test('get Matrix members', async () => {
 
 test('get server name', async () => {
   mockedAxios.get
-    .mockResolvedValueOnce({ data: { server_name: 'matrix.test' } })
+    .mockResolvedValueOnce({ data: { user_id: '@testuser:matrix.test' } })
     .mockRejectedValueOnce(undefined)
   await expect(getServerName()).resolves.toBe('matrix.test')
   await expect(getServerName()).resolves.toBe('matrix.test')
-  expect(mockedAxios.get).toHaveBeenCalledWith('/_matrix/key/v2/server')
+  expect(mockedAxios.get).toHaveBeenCalledWith(
+    '/_matrix/client/v3/account/whoami'
+  )
   expect(mockedAxios.get).toHaveBeenCalledTimes(1)
 })
