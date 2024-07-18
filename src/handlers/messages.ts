@@ -16,7 +16,7 @@ import {
   formatUserSessionOptions,
   getServerName,
 } from '../helpers/synapse'
-import reactionKeys from '../reactions.json'
+import emojiMap from '../emojis.json'
 import { executeAndHandleMissingMember } from './rooms'
 
 const applicationServiceToken = process.env.AS_TOKEN || ''
@@ -84,9 +84,9 @@ export type MatrixMessage = {
 }
 
 /**
- * Reaction emojis translated from Rocket.Chat to Unicode emojis, which Matrix uses
+ * Emojis translated from Rocket.Chat to Unicode emojis, which Matrix uses
  */
-export type ReactionKeys = {
+export type EmojiMappings = {
   [key: string]: string
 }
 
@@ -125,12 +125,7 @@ export async function mapTextMessage(
 
   const converter = new showdown.Converter(converterOptions)
 
-  const emojified = emoji.emojify(msg, {
-    fallback(part) {
-      const formatted_part = `:${part}:`
-      return (reactionKeys as ReactionKeys)[formatted_part] || formatted_part
-    },
-  })
+  const emojified = msg.replace(/:[\w\-+]+:/g, getEmoji)
   const htmled = converter.makeHtml(emojified)
   const matrixMessage: MatrixMessage = {
     type: 'm.room.message',
@@ -219,12 +214,9 @@ export async function handleReactions(
 ): Promise<void> {
   for (const [reaction, value] of Object.entries(reactions || {})) {
     // Lookup key/emoji
-    const reactionKey: string =
-      (reactionKeys as ReactionKeys)[reaction] ||
-      emoji.get(reaction.replaceAll(':', '')) ||
-      ''
+    const reactionEmoji: string = getEmoji(reaction)
 
-    if (!reactionKey) {
+    if (reactionEmoji === reaction) {
       log.warn(
         `Could not find an emoji for ${reaction} for message ${matrixMessageId}, skipping`
       )
@@ -236,13 +228,13 @@ export async function handleReactions(
         .map(async (rcUsername: string) => {
           // generate transaction id
           const transactionId = Buffer.from(
-            [matrixMessageId, reactionKey, rcUsername].join('\0')
+            [matrixMessageId, reactionEmoji, rcUsername].join('\0')
           ).toString('base64url')
           // lookup user access token
           const userMapping = await getUserMappingByName(rcUsername)
           if (!userMapping || !userMapping.accessToken) {
             log.warn(
-              `Could not find user mapping for name: ${rcUsername}, skipping reaction ${reactionKey} for message ${matrixMessageId}`
+              `Could not find user mapping for name: ${rcUsername}, skipping reaction ${reactionEmoji} for message ${matrixMessageId}`
             )
             return
           }
@@ -251,7 +243,7 @@ export async function handleReactions(
             userMapping.accessToken
           )
           log.http(
-            `Adding reaction to message ${matrixMessageId} with symbol ${reactionKey} for user ${rcUsername}`
+            `Adding reaction to message ${matrixMessageId} with symbol ${reactionEmoji} for user ${rcUsername}`
           )
           // put reaction
           try {
@@ -262,7 +254,7 @@ export async function handleReactions(
                   'm.relates_to': {
                     rel_type: 'm.annotation',
                     event_id: matrixMessageId,
-                    key: reactionKey,
+                    key: reactionEmoji,
                   },
                 },
                 userSessionOptions
@@ -275,7 +267,7 @@ export async function handleReactions(
               error.response.data.errcode === 'M_DUPLICATE_ANNOTATION'
             ) {
               log.debug(
-                `Duplicate reaction to message ${matrixMessageId} with symbol ${reactionKey} for user ${rcUsername}, skipping.`
+                `Duplicate reaction to message ${matrixMessageId} with symbol ${reactionEmoji} for user ${rcUsername}, skipping.`
               )
             } else {
               throw error
@@ -284,6 +276,21 @@ export async function handleReactions(
         })
     )
   }
+}
+
+/**
+ * Lookup an emoji first by its name representation and return a unicode emoji.
+ *
+ * First the emojis.json is looked up, then the emoji library. If no emoji is found, the search string is returned.
+ * @param searchString Name of the emoji, possibly surrounded by colons
+ * @returns The found emoji or `searchString`
+ */
+export function getEmoji(searchString: string): string {
+  return (
+    (emojiMap as EmojiMappings)[searchString] ||
+    emoji.get(searchString.replaceAll(':', '')) ||
+    searchString
+  )
 }
 
 /**

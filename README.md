@@ -107,8 +107,10 @@ Then you can restart with an empty but quite equal server, following the instruc
 - Getting data from Rocket.Chat via manual mongodb export
 - Room to Channel conversion:
   - Read-only attributes of channels not converted to power levels due to complexity
-- Reactions:
+- Reactions and emojis:
   - So far only reactions used in our chats have been translated
+  - To add more, `src/emojis.json` can be modified (PRs with additions are appreciated)
+    - These mappings take precedence over the used translation library
   - Individual logos of _netzbegruenung_ and _verdigado_ have been replaced by a generic sunflower
   - Skin colour tones and genders have been ignored in the manual translation, using the neutral versions
 - Discussions are not translated, yet, as they have a channel-like data structure which probably should be translated to threads

@@ -177,8 +177,8 @@ test('handling reactions', async () => {
   await expect(
     handleReactions(
       {
-        ':+1:': { usernames: ['testuser', 'testuser', 'undefined'] }, // exists in reactions.json
-        ':biohazard:': { usernames: ['testuser'] }, // doesn't exist in reactions.json, but found by node-emoji
+        ':+1:': { usernames: ['testuser', 'testuser', 'undefined'] }, // exists in emojis.json
+        ':biohazard:': { usernames: ['testuser'] }, // doesn't exist in emojis.json, but found by node-emoji
         ':undefined:': { usernames: [] }, // doesn't exist, should cause a warning
         ':thumbsup:': { usernames: ['testuser'] }, // should create the same request as with :+1:
       },
