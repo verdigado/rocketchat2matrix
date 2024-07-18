@@ -125,7 +125,12 @@ export async function mapTextMessage(
 
   const converter = new showdown.Converter(converterOptions)
 
-  const emojified = emoji.emojify(msg)
+  const emojified = emoji.emojify(msg, {
+    fallback(part) {
+      const formatted_part = `:${part}:`
+      return (reactionKeys as ReactionKeys)[formatted_part] || formatted_part
+    },
+  })
   const htmled = converter.makeHtml(emojified)
   const matrixMessage: MatrixMessage = {
     type: 'm.room.message',

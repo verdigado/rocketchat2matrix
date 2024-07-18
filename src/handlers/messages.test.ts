@@ -241,7 +241,7 @@ test('parse emojis', async () => {
   })
 })
 
-test.failing('parse custom emojis', async () => {
+test('parse custom emojis', async () => {
   await expect(
     mapTextMessage({
       ...rcMessage,
@@ -250,6 +250,16 @@ test.failing('parse custom emojis', async () => {
   ).resolves.toStrictEqual({
     ...matrixMessage,
     body: 'normal 📏 and 🍮 custom stuff 🌻',
+  })
+
+  await expect(
+    mapTextMessage({
+      ...rcMessage,
+      msg: ':nonExistingEmojiFallingBackToText:',
+    })
+  ).resolves.toStrictEqual({
+    ...matrixMessage,
+    body: ':nonExistingEmojiFallingBackToText:',
   })
 })
 
