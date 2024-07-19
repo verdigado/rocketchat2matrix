@@ -87,8 +87,11 @@ export function mapRoom(rcRoom: RcRoom): MatrixRoom {
       'm.federate': false,
     },
   }
-  room.name = rcRoom.fname ? rcRoom.fname : rcRoom.name
-  rcRoom.name && (room.room_alias_name = rcRoom.name)
+
+  if (rcRoom.fname || rcRoom.name) {
+    room.name = rcRoom.fname || rcRoom.name
+    room.room_alias_name = rcRoom.fname || rcRoom.name
+  }
   rcRoom.description && (room.topic = rcRoom.description)
 
   switch (rcRoom.t) {
