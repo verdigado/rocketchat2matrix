@@ -87,7 +87,7 @@ export function mapRoom(rcRoom: RcRoom): MatrixRoom {
       'm.federate': false,
     },
   }
-  rcRoom.name && (room.name = rcRoom.name)
+  room.name = rcRoom.fname ? rcRoom.fname : rcRoom.name
   rcRoom.name && (room.room_alias_name = rcRoom.name)
   rcRoom.description && (room.topic = rcRoom.description)
 
