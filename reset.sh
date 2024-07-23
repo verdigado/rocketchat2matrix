@@ -24,6 +24,7 @@ set -u
 echo 'Resetting containers and databases'
 docker compose down
 sudo rm -f files/homeserver.db
+sudo rm -rf files/media_store/local_{content,thumbnails}
 rm -f db.sqlite
 docker compose up -d
 
