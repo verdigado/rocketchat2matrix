@@ -395,6 +395,15 @@ export async function handle(rcMessage: RcMessage): Promise<void> {
         rcMessage.file.name,
         rcMessage.file.type
       )
+      if (rcMessage.attachments[0].description) {
+        // send the description as a separate text message
+        const saved_id = rcMessage._id
+        rcMessage._id = rcMessage.file._id
+        rcMessage.msg = rcMessage.attachments[0].description
+        rcMessage.type = 'm.text'
+        await handleMessage(rcMessage, room_id, ts)
+        rcMessage._id = saved_id
+      }
       rcMessage.msg = rcMessage.file.name
       rcMessage.file.url = mxcurl
       if (rcMessage.attachments[0].image_type) {
