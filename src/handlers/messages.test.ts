@@ -230,6 +230,14 @@ test('parse markdown', async () => {
     format: 'org.matrix.custom.html',
     formatted_body: '<p>This is <strong>bold</strong></p>',
   })
+
+  // Don't interpret underscores mid word as markdown
+  await expect(
+    mapTextMessage({ ...rcMessage, msg: 'user_1, user_2, user__3, user__4' })
+  ).resolves.toStrictEqual({
+    ...matrixMessage,
+    body: 'user_1, user_2, user__3, user__4',
+  })
 })
 
 test('parse emojis', async () => {

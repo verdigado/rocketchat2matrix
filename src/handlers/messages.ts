@@ -97,7 +97,9 @@ export async function mapTextMessage(
 
   const synapseServerName = await getServerName()
 
-  const converterOptions: showdown.ConverterOptions = {}
+  const converterOptions: showdown.ConverterOptions = {
+    literalMidWordUnderscores: true,
+  }
   const mentions: MatrixMessage['m.mentions'] = {}
 
   if (msg.includes('@all')) {
