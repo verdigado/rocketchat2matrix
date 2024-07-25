@@ -1,7 +1,6 @@
 process.env.AS_TOKEN = 'ApplicationSecretToken'
 process.env.EXCLUDED_USERS = 'excludedUser1,excludedUser2'
 import { afterEach, expect, jest, test } from '@jest/globals'
-import axios from 'axios'
 import { IdMapping } from '../entity/IdMapping'
 import log from '../helpers/logger'
 import * as storage from '../helpers/storage'
@@ -18,7 +17,7 @@ import * as synapse from '../helpers/synapse'
 
 jest.mock('../helpers/synapse')
 const mockedSynapse = synapse as jest.Mocked<typeof synapse>
-const mockedAxios = mockedSynapse.axios as jest.Mocked<typeof axios>
+const mockedAxios = mockedSynapse.axios as jest.Mocked<typeof synapse.axios>
 
 jest.mock('../helpers/storage')
 const mockedStorage = storage as jest.Mocked<typeof storage>

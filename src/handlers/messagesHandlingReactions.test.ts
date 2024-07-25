@@ -25,13 +25,14 @@ test('handling reactions: duplicate reaction error', async () => {
       switch (username) {
         case 'testuser':
         case 'duplicator':
-        case 'breaker':
+        case 'breaker': {
           const idMapping = new IdMapping()
           idMapping.rcId = 'rcId-' + username
           idMapping.matrixId = username
           idMapping.type = 0
           idMapping.accessToken = username
           return idMapping
+        }
       }
       return null
     }

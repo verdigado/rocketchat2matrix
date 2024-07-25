@@ -92,12 +92,14 @@ export function mapRoom(rcRoom: RcRoom): MatrixRoom {
     room.name = rcRoom.fname || rcRoom.name
     room.room_alias_name = rcRoom.fname || rcRoom.name
   }
-  rcRoom.description && (room.topic = rcRoom.description)
+  if (rcRoom.description) {
+    room.topic = rcRoom.description
+  }
 
   switch (rcRoom.t) {
     case RcRoomTypes.direct:
-      if (rcRoom.usersCount == 1) {
-        rcRoom.lastMessage && (room.name = rcRoom.lastMessage.u.name)
+      if (rcRoom.usersCount == 1 && rcRoom.lastMessage) {
+        room.name = rcRoom.lastMessage.u.name
       }
       room.is_direct = true
       room.preset = MatrixRoomPresets.trusted
@@ -113,19 +115,21 @@ export function mapRoom(rcRoom: RcRoom): MatrixRoom {
       room.visibility = MatrixRoomVisibility.private
       break
 
-    case RcRoomTypes.live:
+    case RcRoomTypes.live: {
       const messageLivechat = `Room ${
         rcRoom.name || 'with ID: ' + rcRoom._id
       } is a live chat. Migration not implemented`
       log.warn(messageLivechat)
       throw new Error(messageLivechat)
+    }
 
-    default:
+    default: {
       const messageUnknownRoom = `Room ${
         rcRoom.name || 'with ID: ' + rcRoom._id
       } is of type ${rcRoom.t}, which is unknown or unimplemented`
       log.error(messageUnknownRoom)
       throw new Error(messageUnknownRoom)
+    }
   }
   return room
 }
