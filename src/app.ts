@@ -3,7 +3,6 @@ dotenv.config()
 import { AxiosError } from 'axios'
 import lineByLine from 'n-readlines'
 import { exit } from 'node:process'
-import pLimit from 'p-limit'
 import 'reflect-metadata'
 import { Entity, entities } from './Entities'
 import { handleDirectChats } from './handlers/directChats'
@@ -25,9 +24,6 @@ log.info('rocketchat2matrix starts.')
 async function loadRcExport(entity: Entity) {
   const rl = new lineByLine(`./inputs/${entities[entity].filename}`)
 
-  const limit = pLimit(parseInt(process.env.CONCURRENCY_LIMIT || '50'))
-  const queue = []
-
   let line: false | Buffer
   while ((line = rl.next())) {
     const item = JSON.parse(line.toString())
@@ -37,27 +33,17 @@ async function loadRcExport(entity: Entity) {
         break
 
       case Entity.Rooms:
-        queue.push(limit(() => handleRoom(item)))
+        await handleRoom(item)
         break
 
       case Entity.Messages:
-        if (!item.tmid) {
-          queue.push(limit(() => handleMessage(item)))
-        }
-        break
-
-      case Entity.ThreadMessages:
-        if (item.tmid) {
-          queue.push(limit(() => handleMessage(item)))
-        }
+        await handleMessage(item)
         break
 
       default:
         throw new Error(`Unhandled Entity: ${entity}`)
     }
   }
-
-  await Promise.all(queue)
 }
 
 async function main() {
@@ -71,8 +57,6 @@ async function main() {
     await loadRcExport(Entity.Rooms)
     log.info('Parsing messages')
     await loadRcExport(Entity.Messages)
-    log.info('Parsing threaded messages')
-    await loadRcExport(Entity.ThreadMessages)
     log.info('Setting direct chats to be displayed as such for each user')
     await handleDirectChats()
     log.info('Setting pinned messages in rooms')
