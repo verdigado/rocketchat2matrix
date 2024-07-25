@@ -99,6 +99,7 @@ export async function mapTextMessage(
 
   const converterOptions: showdown.ConverterOptions = {
     literalMidWordUnderscores: true,
+    simpleLineBreaks: true,
   }
   const mentions: MatrixMessage['m.mentions'] = {}
 

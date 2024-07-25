@@ -231,6 +231,16 @@ test('parse markdown', async () => {
     formatted_body: '<p>This is <strong>bold</strong></p>',
   })
 
+  // Parse simple line breaks
+  await expect(
+    mapTextMessage({ ...rcMessage, msg: 'Hello\nWorld' })
+  ).resolves.toStrictEqual({
+    ...matrixMessage,
+    body: 'Hello\nWorld',
+    format: 'org.matrix.custom.html',
+    formatted_body: '<p>Hello<br />\nWorld</p>',
+  })
+
   // Don't interpret underscores mid word as markdown
   await expect(
     mapTextMessage({ ...rcMessage, msg: 'user_1, user_2, user__3, user__4' })
