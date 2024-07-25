@@ -42,7 +42,7 @@ steps:
   node-install-dependencies:
     image: *node_image
     commands:
-      - npm clean-install
+      - npm clean-install --omit=optional
     depends_on: [check-pre-commit]
 
   node-lint:
