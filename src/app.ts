@@ -10,8 +10,8 @@ import { handleDirectChats } from './handlers/directChats'
 import { handleRoomMemberships } from './handlers/handleRoomMemberships'
 import { handle as handleMessage, RcMessage } from './handlers/messages'
 import { handlePinnedMessages } from './handlers/pinnedMessages'
-import { handle as handleRoom } from './handlers/rooms'
-import { handle as handleUser } from './handlers/users'
+import { handle as handleRoom, RcRoom } from './handlers/rooms'
+import { handle as handleUser, RcUser } from './handlers/users'
 import log from './helpers/logger'
 import { initStorage } from './helpers/storage'
 import { whoami } from './helpers/synapse'
@@ -24,8 +24,8 @@ log.info('rocketchat2matrix starts.')
  */
 async function loadRcExport(entity: Entity) {
   const concurrency = parseInt(process.env.CONCURRENCY_LIMIT || '50')
-  const user_queue = []
-  const room_queue = []
+  const user_queue: RcUser[] = []
+  const room_queue: RcRoom[] = []
   const messages_per_room: Map<string, RcMessage[]> = new Map()
 
   const rl = new lineByLine(`./inputs/${entities[entity].filename}`)
