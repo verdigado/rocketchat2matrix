@@ -17,6 +17,7 @@
   "_id": "publicRoom",
   "description": "Public House Room",
   "name": "PubRoom",
+  "fname": "Pádraig's Pub 🍻",
   "t": "c",
   "u": {
     "_id": "normalUserId"

@@ -53,15 +53,21 @@ describe('rooms', () => {
     expect(room.join_rules).toBe('invite')
   })
 
-  test('modes and permissions', () => {
-    const publicRoom = matrixRooms.find((room) => room.name === 'PubRoom') as {
+  test('modes and permissions', async () => {
+    const publicRoomId = await getRoomId('publicRoom')
+    const publicRoom = matrixRooms.find(
+      (room) => room.room_id === publicRoomId
+    ) as {
       public: boolean
       join_rules: string
     }
     expect(publicRoom.public).toBe(true)
     expect(publicRoom.join_rules).toBe('public')
 
-    const privateRoom = matrixRooms.find((room) => room.name === 'priv') as {
+    const privateRoomId = await getRoomId('privateRoom')
+    const privateRoom = matrixRooms.find(
+      (room) => room.room_id === privateRoomId
+    ) as {
       public: boolean
       join_rules: string
     }
@@ -153,6 +159,15 @@ describe('rooms', () => {
         members: room.members.sort(),
       }))
     )
+  })
+
+  test('names correctly converted', async () => {
+    const roomId = await getRoomId('publicRoom')
+    const room = (await axios.get(`/_synapse/admin/v1/rooms/${roomId}`)).data
+
+    expect(room.name).toBe("Pádraig's Pub 🍻")
+    expect(room.canonical_alias).toContain('PubRoom')
+    expect(room.topic).toBe('Public House Room')
   })
 })
 

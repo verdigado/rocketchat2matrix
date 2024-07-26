@@ -90,8 +90,11 @@ export function mapRoom(rcRoom: RcRoom): MatrixRoom {
 
   if (rcRoom.fname || rcRoom.name) {
     room.name = rcRoom.fname || rcRoom.name
-    room.room_alias_name = rcRoom.fname || rcRoom.name
+    if (rcRoom.name) {
+      room.room_alias_name = rcRoom.name
+    }
   }
+
   if (rcRoom.description) {
     room.topic = rcRoom.description
   }
