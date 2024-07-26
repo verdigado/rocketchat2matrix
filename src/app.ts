@@ -3,6 +3,7 @@ dotenv.config()
 import { AxiosError } from 'axios'
 import lineByLine from 'n-readlines'
 import { exit } from 'node:process'
+import { PromisePool } from '@supercharge/promise-pool'
 import 'reflect-metadata'
 import { Entity, entities } from './Entities'
 import { handleDirectChats } from './handlers/directChats'
@@ -22,6 +23,9 @@ log.info('rocketchat2matrix starts.')
  * @param entity The Entity with it's file name and type definitions
  */
 async function loadRcExport(entity: Entity) {
+  const concurrency = parseInt(process.env.CONCURRENCY_LIMIT || '50')
+  const user_queue = []
+  const room_queue = []
   const rl = new lineByLine(`./inputs/${entities[entity].filename}`)
 
   let line: false | Buffer
@@ -29,11 +33,11 @@ async function loadRcExport(entity: Entity) {
     const item = JSON.parse(line.toString())
     switch (entity) {
       case Entity.Users:
-        await handleUser(item)
+        user_queue.push(item)
         break
 
       case Entity.Rooms:
-        await handleRoom(item)
+        room_queue.push(item)
         break
 
       case Entity.Messages:
@@ -44,6 +48,14 @@ async function loadRcExport(entity: Entity) {
         throw new Error(`Unhandled Entity: ${entity}`)
     }
   }
+
+  await PromisePool.withConcurrency(concurrency)
+    .for(user_queue)
+    .process((item) => handleUser(item))
+
+  await PromisePool.withConcurrency(concurrency)
+    .for(room_queue)
+    .process((item) => handleRoom(item))
 }
 
 async function main() {
