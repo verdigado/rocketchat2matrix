@@ -8,7 +8,7 @@ import 'reflect-metadata'
 import { Entity, entities } from './Entities'
 import { handleDirectChats } from './handlers/directChats'
 import { handleRoomMemberships } from './handlers/handleRoomMemberships'
-import { handle as handleMessage } from './handlers/messages'
+import { handle as handleMessage, RcMessage } from './handlers/messages'
 import { handlePinnedMessages } from './handlers/pinnedMessages'
 import { handle as handleRoom } from './handlers/rooms'
 import { handle as handleUser } from './handlers/users'
@@ -26,6 +26,8 @@ async function loadRcExport(entity: Entity) {
   const concurrency = parseInt(process.env.CONCURRENCY_LIMIT || '50')
   const user_queue = []
   const room_queue = []
+  const messages_per_room: Map<string, RcMessage[]> = new Map()
+
   const rl = new lineByLine(`./inputs/${entities[entity].filename}`)
 
   let line: false | Buffer
@@ -41,7 +43,11 @@ async function loadRcExport(entity: Entity) {
         break
 
       case Entity.Messages:
-        await handleMessage(item)
+        if (messages_per_room.has(item.rid)) {
+          messages_per_room.get(item.rid)?.push(item)
+        } else {
+          messages_per_room.set(item.rid, [item])
+        }
         break
 
       default:
@@ -56,6 +62,14 @@ async function loadRcExport(entity: Entity) {
   await PromisePool.withConcurrency(concurrency)
     .for(room_queue)
     .process((item) => handleRoom(item))
+
+  await PromisePool.withConcurrency(concurrency)
+    .for(messages_per_room.values())
+    .process(async (room) => {
+      for (const item of room) {
+        await handleMessage(item)
+      }
+    })
 }
 
 async function main() {
