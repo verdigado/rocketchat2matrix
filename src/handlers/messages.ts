@@ -19,7 +19,7 @@ import {
 } from '../helpers/synapse'
 import emojiMap from '../emojis.json'
 import { executeAndHandleMissingMember } from './rooms'
-import * as fs from 'fs'
+import fs from 'fs/promises'
 
 const applicationServiceToken = process.env.AS_TOKEN || ''
 if (!applicationServiceToken) {
@@ -241,9 +241,17 @@ export async function uploadFile(
   fileName: string,
   content_type: string
 ): Promise<string> {
-  const fileStream = fs.createReadStream(filePath)
   const accessToken = await getAccessToken(user_id)
   log.http(`Uploading ${fileName}...`)
+
+  let fd: fs.FileHandle | undefined
+  try {
+    fd = await fs.open(filePath)
+  } catch (err) {
+    log.warn(`Unable to open ${filePath}:`, err)
+    throw err
+  }
+  const fileStream = fd.createReadStream()
 
   return (
     await axios.post(
@@ -252,7 +260,7 @@ export async function uploadFile(
       {
         headers: {
           'Content-Type': content_type,
-          'Content-Length': fs.statSync(filePath).size,
+          'Content-Length': (await fd.stat()).size,
           Authorization: `Bearer ${accessToken}`,
         },
       }
@@ -384,17 +392,19 @@ export async function handle(rcMessage: RcMessage): Promise<void> {
   if (rcMessage.file) {
     if (rcMessage.attachments?.length == 1) {
       const path = './inputs/files/' + rcMessage.file._id
-      if (!fs.existsSync(path)) {
-        log.warn(`File doesn't exist locally, skipping Upload.`)
+      let mxcurl: string
+      try {
+        mxcurl = await uploadFile(
+          rcMessage.u._id,
+          ts,
+          path,
+          rcMessage.file.name,
+          rcMessage.file.type
+        )
+      } catch (err) {
+        log.warn(`Error uploading file ${path}, skipping Upload.`)
         return
       }
-      const mxcurl = await uploadFile(
-        rcMessage.u._id,
-        ts,
-        path,
-        rcMessage.file.name,
-        rcMessage.file.type
-      )
       if (rcMessage.attachments[0].description) {
         // send the description as a separate text message
         const saved_id = rcMessage._id
