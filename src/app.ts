@@ -24,9 +24,9 @@ log.info('rocketchat2matrix starts.')
  */
 async function loadRcExport(entity: Entity) {
   const concurrency = parseInt(process.env.CONCURRENCY_LIMIT || '50')
-  const user_queue: RcUser[] = []
-  const room_queue: RcRoom[] = []
-  const messages_per_room: Map<string, RcMessage[]> = new Map()
+  const userQueue: RcUser[] = []
+  const roomQueue: RcRoom[] = []
+  const messagesPerRoom: Map<string, RcMessage[]> = new Map()
 
   const rl = new lineByLine(`./inputs/${entities[entity].filename}`)
 
@@ -35,18 +35,18 @@ async function loadRcExport(entity: Entity) {
     const item = JSON.parse(line.toString())
     switch (entity) {
       case Entity.Users:
-        user_queue.push(item)
+        userQueue.push(item)
         break
 
       case Entity.Rooms:
-        room_queue.push(item)
+        roomQueue.push(item)
         break
 
       case Entity.Messages:
-        if (messages_per_room.has(item.rid)) {
-          messages_per_room.get(item.rid)?.push(item)
+        if (messagesPerRoom.has(item.rid)) {
+          messagesPerRoom.get(item.rid)?.push(item)
         } else {
-          messages_per_room.set(item.rid, [item])
+          messagesPerRoom.set(item.rid, [item])
         }
         break
 
@@ -56,15 +56,15 @@ async function loadRcExport(entity: Entity) {
   }
 
   await PromisePool.withConcurrency(concurrency)
-    .for(user_queue)
+    .for(userQueue)
     .process((item) => handleUser(item))
 
   await PromisePool.withConcurrency(concurrency)
-    .for(room_queue)
+    .for(roomQueue)
     .process((item) => handleRoom(item))
 
   await PromisePool.withConcurrency(concurrency)
-    .for(messages_per_room.values())
+    .for(messagesPerRoom.values())
     .process(async (room) => {
       for (const item of room) {
         await handleMessage(item)
