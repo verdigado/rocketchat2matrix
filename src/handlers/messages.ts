@@ -244,28 +244,32 @@ export async function uploadFile(
   const accessToken = await getAccessToken(user_id)
   log.http(`Uploading ${fileName}...`)
 
-  let fd: fs.FileHandle | undefined
   try {
-    fd = await fs.open(filePath)
-  } catch (err) {
-    log.warn(`Unable to open ${filePath}:`, err)
+    const fd = await fs.open(filePath)
+    const fileStream = fd.createReadStream()
+    return (
+      await axios.post(
+        `/_matrix/media/v3/upload?user_id=${user_id}&ts=${ts}&filename=${fileName}`,
+        fileStream,
+        {
+          headers: {
+            'Content-Type': content_type,
+            'Content-Length': (await fd.stat()).size,
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      )
+    ).data.content_uri
+  } catch (err: any) {
+    if (err.code === 'EACCES' || err.code === 'ENOENT') {
+      log.warn(`Unable to open ${filePath}:`, err)
+    } else if (err instanceof AxiosError) {
+      log.warn(`Error during POST request of ${fileName}:`, err)
+    } else {
+      log.warn(`Other error while uploading ${filePath}:`, err)
+    }
     throw err
   }
-  const fileStream = fd.createReadStream()
-
-  return (
-    await axios.post(
-      `/_matrix/media/v3/upload?user_id=${user_id}&ts=${ts}&filename=${fileName}`,
-      fileStream,
-      {
-        headers: {
-          'Content-Type': content_type,
-          'Content-Length': (await fd.stat()).size,
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }
-    )
-  ).data.content_uri
 }
 
 /**
