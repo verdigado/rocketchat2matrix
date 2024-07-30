@@ -31,28 +31,34 @@ async function loadRcExport(entity: Entity) {
   const rl = new lineByLine(`./inputs/${entities[entity].filename}`)
 
   let line: false | Buffer
-  while ((line = rl.next())) {
-    const item = JSON.parse(line.toString())
-    switch (entity) {
-      case Entity.Users:
+  switch (entity) {
+    case Entity.Users:
+      while ((line = rl.next())) {
+        const item = JSON.parse(line.toString())
         userQueue.push(item)
-        break
+      }
+      break
 
-      case Entity.Rooms:
+    case Entity.Rooms:
+      while ((line = rl.next())) {
+        const item = JSON.parse(line.toString())
         roomQueue.push(item)
-        break
+      }
+      break
 
-      case Entity.Messages:
+    case Entity.Messages:
+      while ((line = rl.next())) {
+        const item = JSON.parse(line.toString())
         if (messagesPerRoom.has(item.rid)) {
           messagesPerRoom.get(item.rid)?.push(item)
         } else {
           messagesPerRoom.set(item.rid, [item])
         }
-        break
+      }
+      break
 
-      default:
-        throw new Error(`Unhandled Entity: ${entity}`)
-    }
+    default:
+      throw new Error(`Unhandled Entity: ${entity}`)
   }
 
   await PromisePool.withConcurrency(concurrency)
