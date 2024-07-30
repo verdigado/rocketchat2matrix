@@ -32,6 +32,7 @@ const rcMessage: RcMessage = {
   ts: {
     $date: '1970-01-02T06:51:51.0Z', // UNIX-TS: 111111000
   },
+  type: 'm.text',
 }
 
 const matrixMessage: MatrixMessage = {

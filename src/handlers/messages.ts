@@ -8,6 +8,7 @@ import {
   getMessageId,
   getRoomId,
   getUserId,
+  getAccessToken,
   getUserMappingByName,
   save,
 } from '../helpers/storage'
@@ -18,12 +19,23 @@ import {
 } from '../helpers/synapse'
 import emojiMap from '../emojis.json'
 import { executeAndHandleMissingMember } from './rooms'
+import fs from 'fs/promises'
 
 const applicationServiceToken = process.env.AS_TOKEN || ''
 if (!applicationServiceToken) {
   const message = 'No AS_TOKEN found in .env.'
   log.error(message)
   throw new Error(message)
+}
+
+type attachment = {
+  type?: string
+  description?: string
+  message_link?: string
+  image_url?: string
+  image_type?: string
+  title: string
+  title_link?: string
 }
 
 /**
@@ -34,6 +46,14 @@ export type RcMessage = {
   t?: string // Event type
   rid: string // The unique id for the room
   msg: string // The content of the message.
+  attachments?: attachment[]
+  file?: {
+    _id: string
+    name: string
+    type: string
+    url: string
+  }
+  type: string
   tmid?: string
   ts: {
     $date: string
@@ -81,6 +101,7 @@ export type MatrixMessage = {
       event_id: string
     }
   }
+  url?: string
 }
 
 /**
@@ -132,7 +153,7 @@ export async function mapTextMessage(
   const htmled = converter.makeHtml(emojified)
   const matrixMessage: MatrixMessage = {
     type: 'm.room.message',
-    msgtype: 'm.text',
+    msgtype: rcMessage.type,
     body: emojified,
   }
   if (mentions && (mentions.room || mentions.user_ids)) {
@@ -202,6 +223,53 @@ export async function createMessage(
       formatUserSessionOptions(applicationServiceToken)
     )
   ).data.event_id
+}
+
+/**
+ * Send a File to Synapse
+ * @param user_id The user the media will be posted by
+ * @param ts The timestamp to which the file will be dated
+ * @param filePath the path on the local filesystem
+ * @param fileName the filename
+ * @param content_type: Content type of the file
+ * @returns The Matrix Message/event ID
+ */
+export async function uploadFile(
+  user_id: string,
+  ts: number,
+  filePath: string,
+  fileName: string,
+  content_type: string
+): Promise<string> {
+  const accessToken = await getAccessToken(user_id)
+  log.http(`Uploading ${fileName}...`)
+
+  try {
+    const fd = await fs.open(filePath)
+    const fileStream = fd.createReadStream()
+    return (
+      await axios.post(
+        `/_matrix/media/v3/upload?user_id=${user_id}&ts=${ts}&filename=${fileName}`,
+        fileStream,
+        {
+          headers: {
+            'Content-Type': content_type,
+            'Content-Length': (await fd.stat()).size,
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      )
+    ).data.content_uri
+  } catch (err: any) {
+    if (err.code === 'EACCES' || err.code === 'ENOENT') {
+      log.warn(`Unable to open ${filePath}:`, err)
+    } else if (err instanceof AxiosError) {
+      log.warn(`Error during POST request of ${fileName}:`, err)
+    } else {
+      log.warn(`Other error while uploading ${filePath}:`, err)
+    }
+    throw err
+  }
 }
 
 /**
@@ -324,6 +392,60 @@ export async function handle(rcMessage: RcMessage): Promise<void> {
     return
   }
 
+  const ts = new Date(rcMessage.ts.$date).valueOf()
+  if (rcMessage.file) {
+    if (rcMessage.attachments?.length == 1) {
+      const path = './inputs/files/' + rcMessage.file._id
+      let mxcurl: string
+      try {
+        mxcurl = await uploadFile(
+          rcMessage.u._id,
+          ts,
+          path,
+          rcMessage.file.name,
+          rcMessage.file.type
+        )
+      } catch (err) {
+        log.warn(`Error uploading file ${path}, skipping Upload.`)
+        return
+      }
+      if (rcMessage.attachments[0].description) {
+        // send the description as a separate text message
+        const saved_id = rcMessage._id
+        rcMessage._id = rcMessage.file._id
+        rcMessage.msg = rcMessage.attachments[0].description
+        rcMessage.type = 'm.text'
+        await handleMessage(rcMessage, room_id, ts)
+        rcMessage._id = saved_id
+      }
+      rcMessage.msg = rcMessage.file.name
+      rcMessage.file.url = mxcurl
+      if (rcMessage.attachments[0].image_type) {
+        rcMessage.type = 'm.image'
+      } else {
+        rcMessage.type = 'm.file'
+      }
+    } else {
+      log.warn(
+        `Many attachments in ${rcMessage.u._id} not handled, skipping Upload.`
+      )
+      return
+    }
+  } else if (rcMessage.attachments && rcMessage.attachments.length > 0) {
+    log.warn(`Attachment in ${rcMessage.u._id} not handled, skipping.`)
+    return
+  } else {
+    rcMessage.type = 'm.text'
+  }
+
+  await handleMessage(rcMessage, room_id, ts)
+}
+
+async function handleMessage(
+  rcMessage: RcMessage,
+  room_id: string,
+  ts: number
+) {
   const user_id = await getUserId(rcMessage.u._id)
   if (!user_id) {
     log.warn(
@@ -332,7 +454,9 @@ export async function handle(rcMessage: RcMessage): Promise<void> {
     return
   }
   const matrixMessage = await mapMessage(rcMessage)
-  const ts = new Date(rcMessage.ts.$date).valueOf()
+  if (rcMessage.file) {
+    matrixMessage.url = rcMessage.file.url
+  }
 
   if (rcMessage.tmid) {
     const event_id = await getMessageId(rcMessage.tmid)
