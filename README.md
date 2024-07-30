@@ -19,6 +19,16 @@ mongoexport --collection=users --db=rocketchat --out=users.json
 
 Export them to `inputs/`
 
+If you are using the `GridFS` storage mode, you will also need to export files:
+
+```shell
+for file in $(mongofiles --db=rocketchat --prefix=rocketchat_uploads list | awk '{print $1}'); do
+  mongofiles --db=rocketchat --prefix=rocketchat_uploads get "$file"
+done
+```
+
+Export them to `inputs/files/`
+
 ### Configuring the Matrix Dev Server
 
 Generate a Synapse homeserver config with the following command (you might change `my.matrix.host` for the actual server name, as it can't be changed afterwards):
