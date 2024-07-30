@@ -37,6 +37,9 @@ async function loadRcExport(entity: Entity) {
         const item = JSON.parse(line.toString())
         userQueue.push(item)
       }
+      await PromisePool.withConcurrency(concurrency)
+        .for(userQueue)
+        .process((item) => handleUser(item))
       break
 
     case Entity.Rooms:
@@ -44,6 +47,9 @@ async function loadRcExport(entity: Entity) {
         const item = JSON.parse(line.toString())
         roomQueue.push(item)
       }
+      await PromisePool.withConcurrency(concurrency)
+        .for(roomQueue)
+        .process((item) => handleRoom(item))
       break
 
     case Entity.Messages:
@@ -55,27 +61,18 @@ async function loadRcExport(entity: Entity) {
           messagesPerRoom.set(item.rid, [item])
         }
       }
+      await PromisePool.withConcurrency(concurrency)
+        .for(messagesPerRoom.values())
+        .process(async (room) => {
+          for (const item of room) {
+            await handleMessage(item)
+          }
+        })
       break
 
     default:
       throw new Error(`Unhandled Entity: ${entity}`)
   }
-
-  await PromisePool.withConcurrency(concurrency)
-    .for(userQueue)
-    .process((item) => handleUser(item))
-
-  await PromisePool.withConcurrency(concurrency)
-    .for(roomQueue)
-    .process((item) => handleRoom(item))
-
-  await PromisePool.withConcurrency(concurrency)
-    .for(messagesPerRoom.values())
-    .process(async (room) => {
-      for (const item of room) {
-        await handleMessage(item)
-      }
-    })
 }
 
 async function main() {
