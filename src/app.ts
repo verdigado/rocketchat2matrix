@@ -10,8 +10,8 @@ import { handleDirectChats } from './handlers/directChats'
 import { handleRoomMemberships } from './handlers/handleRoomMemberships'
 import { handle as handleMessage, RcMessage } from './handlers/messages'
 import { handlePinnedMessages } from './handlers/pinnedMessages'
-import { handle as handleRoom, RcRoom } from './handlers/rooms'
-import { handle as handleUser, RcUser } from './handlers/users'
+import { handle as handleRoom } from './handlers/rooms'
+import { handle as handleUser } from './handlers/users'
 import log from './helpers/logger'
 import { initStorage } from './helpers/storage'
 import { whoami } from './helpers/synapse'
@@ -19,42 +19,42 @@ import { whoami } from './helpers/synapse'
 log.info('rocketchat2matrix starts.')
 
 /**
+ * Reads a file line by line, parses them to JSON and yields the JSON object
+ * This is needed because lineByLine isn't implemented as an iterator
+ * @param path The path of the file
+ */
+async function* jsonIterator(path: string) {
+  const rl = new lineByLine(path)
+  let line: false | Buffer
+  while ((line = rl.next())) {
+    yield JSON.parse(line.toString())
+  }
+}
+
+/**
  * Reads a file line by line and handles the lines parsed to JSON according to the expected type
  * @param entity The Entity with it's file name and type definitions
  */
 async function loadRcExport(entity: Entity) {
   const concurrency = parseInt(process.env.CONCURRENCY_LIMIT || '50')
-  const userQueue: RcUser[] = []
-  const roomQueue: RcRoom[] = []
   const messagesPerRoom: Map<string, RcMessage[]> = new Map()
 
-  const rl = new lineByLine(`./inputs/${entities[entity].filename}`)
-
-  let line: false | Buffer
+  const jsonItems = jsonIterator(`./inputs/${entities[entity].filename}`)
   switch (entity) {
     case Entity.Users:
-      while ((line = rl.next())) {
-        const item = JSON.parse(line.toString())
-        userQueue.push(item)
-      }
       await PromisePool.withConcurrency(concurrency)
-        .for(userQueue)
+        .for(jsonItems)
         .process((item) => handleUser(item))
       break
 
     case Entity.Rooms:
-      while ((line = rl.next())) {
-        const item = JSON.parse(line.toString())
-        roomQueue.push(item)
-      }
       await PromisePool.withConcurrency(concurrency)
-        .for(roomQueue)
+        .for(jsonItems)
         .process((item) => handleRoom(item))
       break
 
     case Entity.Messages:
-      while ((line = rl.next())) {
-        const item = JSON.parse(line.toString())
+      for await (const item of jsonItems) {
         if (messagesPerRoom.has(item.rid)) {
           messagesPerRoom.get(item.rid)?.push(item)
         } else {
