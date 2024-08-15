@@ -37,9 +37,10 @@ async function* jsonIterator(path: string) {
  */
 async function loadRcExport(entity: Entity) {
   const concurrency = parseInt(process.env.CONCURRENCY_LIMIT || '50')
-  const messagesPerRoom: Map<string, RcMessage[]> = new Map()
-
+  let messagesPerRoom: Map<string, RcMessage[]> = new Map()
+  const messageBatchSize = parseInt(process.env.MESSAGE_BATCH_SIZE || '1000000')
   const jsonItems = jsonIterator(`./inputs/${entities[entity].filename}`)
+
   switch (entity) {
     case Entity.Users:
       await PromisePool.withConcurrency(concurrency)
@@ -54,13 +55,26 @@ async function loadRcExport(entity: Entity) {
       break
 
     case Entity.Messages:
+      let i = 0
       for await (const item of jsonItems) {
         if (messagesPerRoom.has(item.rid)) {
           messagesPerRoom.get(item.rid)?.push(item)
         } else {
           messagesPerRoom.set(item.rid, [item])
         }
+        if (i % messageBatchSize === 0) {
+          await PromisePool.withConcurrency(concurrency)
+            .for(messagesPerRoom.values())
+            .process(async (room) => {
+              for (const item of room) {
+                await handleMessage(item)
+              }
+            })
+          messagesPerRoom = new Map()
+        }
+        i++
       }
+      // handle messages again for the last (incomplete) batch
       await PromisePool.withConcurrency(concurrency)
         .for(messagesPerRoom.values())
         .process(async (room) => {
