@@ -2,7 +2,7 @@ when:
   - event: [tag, push]
 
 variables:
-  - &node_image 'node:22-alpine@sha256:9fcc1a6da2b9eee38638df75c5f826e06e9c79f6a0f97f16ed98fe0ebb0725c0'
+  - &node_image 'node:22-alpine@sha256:fc95a044b87e95507c60c1f8c829e5d98ddf46401034932499db370c494ef0ff'
 
 services:
   synapse:
