@@ -165,3 +165,55 @@ test('executeAndHandleMissingMember: using admin to invite missing member', asyn
     'RoomCreatorId'
   )
 })
+
+const tuwunelForbidden = (error: string) =>
+  new AxiosError('nah', '403', undefined, undefined, {
+    data: { errcode: 'M_FORBIDDEN', error },
+    status: 403,
+    statusText: 'nah',
+    headers: {} as AxiosResponseHeaders,
+    config: {} as InternalAxiosRequestConfig,
+  })
+
+test('inviteMember: skip user already joined (Tuwunel wording)', async () => {
+  mockedTuwunel.axios.post.mockReset()
+  mockedTuwunel.axios.post.mockRejectedValueOnce(
+    tuwunelForbidden(
+      'Auth check failed: cannot invite user that is joined or banned'
+    )
+  )
+  await expect(
+    inviteMember('@joined:matrix', room_id, sessionOption)
+  ).resolves.toBeUndefined()
+})
+
+test('executeAndHandleMissingMember: Tuwunel auth error uses the hint', async () => {
+  mockedStorage.getMappingByMatrixId.mockReset()
+  mockedStorage.getMappingByMatrixId.mockResolvedValueOnce(null)
+  let calls = 0
+  await expect(
+    executeAndHandleMissingMember(
+      async () => {
+        calls++
+        throw tuwunelForbidden(
+          "Auth check failed: sender's membership `leave` is not `join`"
+        )
+      },
+      { matrixUserId: '@leaver:matrix', matrixRoomId: '!room:matrix' }
+    )
+  ).resolves.toBeUndefined()
+  expect(calls).toBe(1)
+  expect(mockedStorage.getMappingByMatrixId).toHaveBeenCalledWith(
+    '@leaver:matrix'
+  )
+})
+
+test('executeAndHandleMissingMember: Tuwunel auth error without hint is rethrown', async () => {
+  await expect(
+    executeAndHandleMissingMember(async () => {
+      throw tuwunelForbidden(
+        "Auth check failed: sender's membership `leave` is not `join`"
+      )
+    })
+  ).rejects.toBeInstanceOf(AxiosError)
+})

@@ -74,6 +74,11 @@ chown tuwunel:tuwunel /var/lib/tuwunel
 rm -f db.sqlite
 rm -f src/config/tuwunel_access_token.json
 
+# E2EE mode: crypto stores and recovery keys of the previous (deleted) run
+rm -rf "${E2EE_STORE_DIR:-./e2ee-store}"
+rm -f "${E2EE_STORE_DIR:-./e2ee-store}.passphrase"
+rm -f "${E2EE_RECOVERY_KEYS_FILE:-./recovery-keys.txt}"
+
 echo 'Temporarily disabling the Application Service'
 
 mv "$APPSERVICE_FILE" "$APPSERVICE_DISABLED"

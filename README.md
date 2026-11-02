@@ -300,6 +300,32 @@ A completed migration ends with:
 info: Done.
 ```
 
+### End-to-End Encrypted Migration (optional)
+
+With `E2EE=true` in `.env`, the migrated history is end-to-end encrypted and Tuwunel never receives a migrated message in clear:
+
+- every migrated room is created encrypted (`m.room.encryption` in its initial state);
+- every message and reaction is encrypted by the device of its author before being sent, keeping the original author and timestamp;
+- every migrated user (including the admin) gets a cross-signing identity, a server-side key backup holding the keys of the history of the rooms they were a member of in Rocket.Chat, and a secret storage protected by a personal **recovery key**;
+- the migration then checks, with each recovery key, that every encrypted event of every room of each user can be decrypted from their backup, that no unencrypted message exists, and that nobody holds keys of rooms they were not a member of;
+- if the check succeeds, the temporary migration devices are logged out and their keys (`e2ee-store/`) are deleted.
+
+Requirements: Node.js >= 24 and the native crypto module installed by `npm ci` (`@matrix-org/matrix-sdk-crypto-nodejs`). The Application Service namespace must cover every migrated user (e.g. `regex: '@.*'`); this is checked right after the users are created. `io.element.msc4190` is not needed and should not be enabled. Users must not log into Matrix before the migration: an account that already has its own encryption setup is left untouched and does not receive the keys of the history, and the migration is then not finalized unless `E2EE_ALLOW_SKIPPED_USERS=true`.
+
+The recovery keys are written to `recovery-keys.txt` (mode `0600`). Give each user their own key through a safe channel, then delete the file. On their first login (e.g. through SSO), Element or Tesseract asks to verify the new session: the user chooses the recovery key option, enters it once, and the whole migrated history becomes readable. A lost recovery key cannot be replaced: the history of that user can then no longer be decrypted.
+
+The recovery key is a key escrow that outlives the migration. It unlocks the user's cross-signing identity and the key backup their clients keep using afterwards. Anyone who keeps a copy and can read the homeserver's data can decrypt the migrated history and the user's future messages, and can make a device of theirs appear verified. Confidentiality towards the server operators therefore requires that the migration operator keeps no copy (they had access to the plaintext Rocket.Chat export anyway). A user can cut this link once their whole history is loaded in Element Web/Desktop (which restores the full backup when the recovery key is entered) with "Reset cryptographic identity": new identity, new backup holding the keys already on the device, new recovery key known only to them. Do not do this from clients that download keys lazily (Element X, Tesseract): the history not yet viewed would be lost.
+
+Notes:
+
+- messages restored from a key backup are shown by Element with a grey shield ("the authenticity of this encrypted message can't be guaranteed on this device"), which is normal for history restored from a backup;
+- as required by Matrix, room names, topics, memberships, timestamps and the relations of events (thread roots, the emoji of reactions) remain visible to the server;
+- users joining a migrated room later do not receive the keys of the migrated history automatically (Element X shares the history it holds when inviting, as for any room with shared history);
+- the encrypted history cannot be searched on the server; only Element Desktop can search it locally;
+- the Rocket.Chat export files are in clear: delete them once the migration is validated.
+
+Optional settings: `E2EE_RECOVERY_KEYS_FILE`, `E2EE_STORE_DIR`, `E2EE_STORE_PASSPHRASE`, `E2EE_FINALIZE` (set to `false` to keep the migration devices after a successful check; they are always kept when the check fails, so a fixed migration can be resumed) and `E2EE_ROTATION_MESSAGES` (messages per Megolm session, default 1000). See `.env.example`.
+
 ### Migrated User Passwords
 
 Rocket.Chat passwords cannot be migrated.
@@ -338,6 +364,7 @@ This can include:
 - `.env`
 - migration logs
 - Rocket.Chat export files containing user or message data
+- in E2EE mode: `recovery-keys.txt` once every key has been handed out, `db.sqlite`, and `e2ee-store/` and `e2ee-store.passphrase` if they still exist. Removing the Application Service is mandatory before going live: with a `@.*` namespace its token can act as any user.
 
 Restart Tuwunel after removing or changing its Application Service configuration.
 

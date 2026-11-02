@@ -135,3 +135,7 @@ inputs/
 db.sqlite
 db.sqlite-journal
 db-snapshot.sql
+# E2EE mode
+e2ee-store/
+e2ee-store.passphrase
+recovery-keys.txt

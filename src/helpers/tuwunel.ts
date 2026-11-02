@@ -1,7 +1,8 @@
 import axios from 'axios'
 import { access_token } from '../config/tuwunel_access_token.json'
 import log from './logger'
-import { getAccessToken } from './storage'
+import { Entity, entities } from '../Entities'
+import { getAccessToken, getAllMappingsByType } from './storage'
 
 axios.defaults.baseURL = process.env.HOMESERVER_URL || 'http://127.0.0.1:6167'
 axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`
@@ -84,4 +85,31 @@ export async function getServerName(): Promise<string> {
     ).data.user_id.split(':')[1]
   }
   return serverName
+}
+
+/**
+ * Check that the Application Service may act as every migrated user (its
+ * namespace covers them). Messages are sent through it with their original
+ * date, so a too narrow namespace would stop the migration half-way.
+ */
+export async function checkAppserviceNamespace(): Promise<void> {
+  const refused: string[] = []
+  for (const mapping of await getAllMappingsByType(
+    entities[Entity.Users].mappingType
+  )) {
+    if (!mapping.matrixId) continue
+    try {
+      await axios.get('/_matrix/client/v3/account/whoami', {
+        ...formatUserSessionOptions(applicationServiceToken),
+        params: { user_id: mapping.matrixId },
+      })
+    } catch {
+      refused.push(mapping.matrixId)
+    }
+  }
+  if (refused.length > 0) {
+    throw new Error(
+      `The Application Service cannot act as ${refused.join(', ')}: its users namespace must cover every migrated user (e.g. regex: '@.*')`
+    )
+  }
 }

@@ -1,4 +1,5 @@
 import { Entity, entities } from '../Entities'
+import adminAccessToken from '../config/tuwunel_access_token.json'
 import log from '../helpers/logger'
 import {
   getAllMappingsByType,
@@ -42,12 +43,12 @@ export async function handleRoomMemberships() {
       )
 
       // do action for any user in mx, but not in rc
-      const adminUsername = process.env.ADMIN_USERNAME || ''
+      const adminUserId = adminAccessToken.user_id
       await Promise.all(
         actualMembers.map(async (actualMember) => {
           let userSessionOptions = {}
           // set session options for non-admins
-          if (!actualMember.includes(adminUsername)) {
+          if (actualMember !== adminUserId) {
             const memberMapping = await getMappingByMatrixId(actualMember)
             if (!memberMapping || !memberMapping.accessToken) {
               throw new Error(
@@ -61,7 +62,7 @@ export async function handleRoomMemberships() {
 
           if (
             !memberNames.includes(actualMember) &&
-            !actualMember.includes(adminUsername) // exclude admin from removal
+            actualMember !== adminUserId // exclude admin from removal
           ) {
             // remove excess members from rooms
             log.warn(
@@ -84,7 +85,9 @@ export async function handleRoomMemberships() {
                     ts: Date.now(),
                     dir: 'b', // direction: backwards, getting latest event first
                     limit: 1, // getting only the latest event
-                    filter: { types: ['m.room.message'] }, // getting only message events
+                    filter: JSON.stringify({
+                      types: ['m.room.message', 'm.room.encrypted'],
+                    }), // getting only message events, encrypted or not (the filter is a JSON string)
                   },
                 }
               )

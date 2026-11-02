@@ -1,6 +1,7 @@
 import { createHmac, randomBytes } from 'node:crypto'
 import { Entity, entities } from '../Entities'
 import adminAccessToken from '../config/tuwunel_access_token.json'
+import { isE2EE } from '../e2ee/config'
 import { IdMapping } from '../entity/IdMapping'
 import log from '../helpers/logger'
 import { createMembership, getUserId, save } from '../helpers/storage'
@@ -140,9 +141,7 @@ export async function createMapping(
   mapping.accessToken = matrixUser.access_token
 
   await save(mapping)
-  log.debug(
-    `Mapping added: ${mapping.rcId} -> ${mapping.matrixId}`
-  )
+  log.debug(`Mapping added: ${mapping.rcId} -> ${mapping.matrixId}`)
 }
 
 /**
@@ -179,6 +178,11 @@ export async function handle(rcUser: RcUser): Promise<void> {
       log.info(
         `User ${rcUser.username} is defined as admin in ENV, mapping as such`
       )
+      if (isE2EE()) {
+        // The admin is a regular member of their Rocket.Chat rooms: they must
+        // join them and receive the keys of their history like everyone.
+        await parseUserMemberships(rcUser)
+      }
       await createMapping(rcUser._id, adminAccessToken as unknown as MatrixUser)
     } else if (!userIsExcluded(rcUser)) {
       const matrixUser = await createUser(rcUser)

@@ -1,5 +1,6 @@
 import { AxiosError } from 'axios'
 import { Entity, entities } from '../Entities'
+import { isE2EE } from '../e2ee/config'
 import { IdMapping } from '../entity/IdMapping'
 import log from '../helpers/logger'
 import {
@@ -74,6 +75,11 @@ export type MatrixRoom = {
   is_direct?: boolean
   preset?: MatrixRoomPresets
   visibility?: MatrixRoomVisibility
+  initial_state?: Array<{
+    type: string
+    state_key: string
+    content: Record<string, unknown>
+  }>
 }
 
 /**
@@ -134,6 +140,18 @@ export function mapRoom(rcRoom: RcRoom): MatrixRoom {
       throw new Error(messageUnknownRoom)
     }
   }
+
+  if (isE2EE()) {
+    // The room is encrypted from its first event: no message of the
+    // migrated history can be sent unencrypted.
+    room.initial_state = [
+      {
+        type: 'm.room.encryption',
+        state_key: '',
+        content: { algorithm: 'm.megolm.v1.aes-sha2' },
+      },
+    ]
+  }
   return room
 }
 
@@ -185,7 +203,9 @@ export async function getCreatorSessionOptions(
   if (creatorId) {
     try {
       const creatorSessionOptions = await getUserSessionOptions(creatorId)
-      log.debug(`Room owner session generated for Rocket.Chat user ${creatorId}`)
+      log.debug(
+        `Room owner session generated for Rocket.Chat user ${creatorId}`
+      )
       return creatorSessionOptions
     } catch (error) {
       log.warn(error)
@@ -236,7 +256,11 @@ export async function inviteMember(
       error instanceof AxiosError &&
       error.response &&
       error.response.data.errcode === 'M_FORBIDDEN' &&
-      error.response.data.error === `${inviteeId} is already in the room.`
+      (error.response.data.error === `${inviteeId} is already in the room.` ||
+        // Tuwunel's wording
+        error.response.data.error?.includes(
+          'cannot invite user that is joined'
+        ))
     ) {
       log.debug(
         `User ${inviteeId} is already in room ${roomId}, probably because this user created the room as a fallback.`
@@ -316,6 +340,36 @@ export async function createMapping(
 }
 
 /**
+ * E2EE mode: make sure Tuwunel really created the room encrypted. A server
+ * with `allow_encryption = false` silently drops m.room.encryption.
+ * @param roomId The Matrix room ID
+ * @param sessionOptions The credentials of a member of the room
+ */
+export async function assertRoomEncrypted(
+  roomId: string,
+  sessionOptions: SessionOptions | object
+): Promise<void> {
+  let algorithm: string | undefined
+  try {
+    algorithm = (
+      await axios.get(
+        `/_matrix/client/v3/rooms/${encodeURIComponent(roomId)}/state/m.room.encryption`,
+        sessionOptions
+      )
+    ).data?.algorithm
+  } catch (error) {
+    if (!(error instanceof AxiosError && error.response?.status === 404)) {
+      throw error
+    }
+  }
+  if (algorithm !== 'm.megolm.v1.aes-sha2') {
+    throw new Error(
+      `Room ${roomId} was created unencrypted: check that allow_encryption is not disabled in tuwunel.toml`
+    )
+  }
+}
+
+/**
  * Create a Matrix room from a Rocket.Chat room object and handle it's memberships
  * @param rcRoom The Rocket.Chat room object
  * @returns The Matrix room object, including it's ID
@@ -328,6 +382,9 @@ export async function createRoom(rcRoom: RcRoom): Promise<MatrixRoom> {
   log.debug('Creating room:', room)
 
   room.room_id = await registerRoom(room, creatorSessionOptions)
+  if (isE2EE()) {
+    await assertRoomEncrypted(room.room_id, creatorSessionOptions)
+  }
 
   await handleMemberships(rcRoom._id, room, creatorId, creatorSessionOptions)
 
@@ -396,24 +453,30 @@ export async function addMember(
  * @example executeAndHandleMissingMember(() => myFunc('parameter1', 'parameter2'))
  */
 export async function executeAndHandleMissingMember(
-  fn: () => Promise<void>
+  fn: () => Promise<void>,
+  hint?: { matrixUserId: string; matrixRoomId: string }
 ): Promise<void> {
   const regEx: RegExp =
     /^User (?<matrixUserId>@.+) not in room (?<matrixRoomId>!.+)$/
+  // Tuwunel's wording, which does not name the user nor the room
+  const authCheckRegEx: RegExp = /sender's membership `[a-z]+` is not `join`/
   try {
     await fn()
   } catch (error) {
+    const message: string | undefined =
+      error instanceof AxiosError ? error.response?.data?.error : undefined
+    const ids =
+      message?.match(regEx)?.groups ||
+      (hint && message && authCheckRegEx.test(message) ? hint : undefined)
     if (
       error instanceof AxiosError &&
       error.response &&
       error.response.data.errcode === 'M_FORBIDDEN' &&
-      error.response.data.error &&
-      regEx.test(error.response.data.error)
+      ids
     ) {
       log.info(`${error.response.data.error}, adding.`)
 
-      const { matrixUserId, matrixRoomId } =
-        error.response.data.error.match(regEx).groups
+      const { matrixUserId, matrixRoomId } = ids
 
       const userMapping = await getMappingByMatrixId(matrixUserId)
       if (!userMapping || !userMapping.matrixId || !userMapping.accessToken) {
